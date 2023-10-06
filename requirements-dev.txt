@@ -1,0 +1,5 @@
+# Development tools not required for project installation
+pre-commit
+beartype
+ruff
+black

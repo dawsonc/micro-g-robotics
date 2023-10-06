@@ -1,0 +1,13 @@
+{
+  "name": "Micro-G Robotics Nouveau",
+  "dockerFile": "../.docker/Dockerfile",
+  "context": "../..",
+  "build": {
+    "args": {
+      "WORKSPACE": "${containerWorkspaceFolder}",
+      // "ROS_DISTRO": "humble"
+    },
+    "target": "desktop"
+  },
+  "remoteUser": "buzz"
+}
