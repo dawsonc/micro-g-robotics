@@ -1,12 +1,11 @@
 {
-  "name": "Micro-G Robotics Nouveau",
-  "dockerFile": "../.docker/Dockerfile",
-  "context": "..",
+  "name": "Micro-G Robotics NVIDIA",
+  "dockerFile": "Dockerfile",
+  "context": "../..",
   "build": {
     "args": {
       "WORKSPACE": "${containerWorkspaceFolder}"
-    },
-    "target": "base"
+    }
   },
   "remoteUser": "buzz",
   "runArgs": [
@@ -16,13 +15,17 @@
     "--security-opt=apparmor:unconfined",
     "--volume=/dev:/dev",
     "--privileged",
-    "--volume=/run/user/1000:/run/user/1000"
+    "--volume=/tmp/.X11-unix:/tmp/.X11-unix",
+    "--volume=/mnt/wslg:/mnt/wslg",
+    "--gpus=all"
   ],
   "containerEnv": {
     "DISPLAY": "${localEnv:DISPLAY}",
     "WAYLAND_DISPLAY": "${localEnv:WAYLAND_DISPLAY}",
     "XDG_RUNTIME_DIR": "${localEnv:XDG_RUNTIME_DIR}",
-    "PULSE_SERVER": "${localEnv:PULSE_SERVER}"
+    "PULSE_SERVER": "${localEnv:PULSE_SERVER}",
+    "LIBGL_ALWAYS_SOFTWARE": "1",
+    "QT_X11_NO_MITSHM": "1"
   },
   "customizations": {
     "vscode": {

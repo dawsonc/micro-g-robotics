@@ -1,4 +1,4 @@
-FROM base as develop
+FROM ghcr.io/dawsonc/micro-g-robotics:humble-base
 
 # Install ROS dependencies
 # This is done in a previous stage, but we include it again here in case anyone wants to
