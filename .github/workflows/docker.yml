@@ -1,11 +1,10 @@
 name: Docker
 
 on:
-  schedule:
-    - cron: "0 17 * * 6"
   push:
     branches:
       - main
+      - feature-simulation-env
   pull_request:
     paths:
       - .docker/**

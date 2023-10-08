@@ -2,9 +2,9 @@ ARG ROS_DISTRO=humble
 FROM ros:$ROS_DISTRO-ros-base as ci
 
 ENV DEBIAN_FRONTEND=noninteractive
-WORKDIR /root/ws_micro_g_robotics
+WORKDIR /root/ws_micro_g
 
-COPY . src/micro_g_robotics
+COPY . src/micro-g-robotics
 
 # Install apt packages
 RUN apt-get -q update \
@@ -23,8 +23,15 @@ RUN apt-get -q update \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
 
-# Install the Python requirements that aren't available as rosdeps
-RUN python3 -m pip install -r $(pwd)/src/micro_g_robotics/requirements-build.txt
+# Install all ROS dependencies needed for CI
+RUN apt-get -q update \
+    && apt-get -q -y upgrade \
+    && rosdep update \
+    && rosdep install -y --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} --as-root=apt:false \
+    && rm -rf src \
+    && apt-get autoremove -y \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/*
 
 FROM ci as base
 
@@ -39,11 +46,29 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME \
     && echo "source /usr/share/bash-completion/completions/git" >> /home/$USERNAME/.bashrc
 
-FROM base as simulation
+# Download and install external repos used by the project
+ENV DEBIAN_FRONTEND=noninteractive
+ENV USER_WORKSPACE=/home/$USERNAME/ws_micro_g
+WORKDIR $USER_WORKSPACE
 
-FROM simulation as desktop
+COPY . src/micro-g-robotics
 
-# WARNING: This is a temporary solution for disabling the setuputils installation warning
-ENV PYTHONWARNINGS="ignore"
+RUN apt-get -q update\
+    && apt-get -q -y upgrade \
+    && vcs import src < src/micro-g-robotics/micro_g.repos
 
-ARG WORKSPACE
+# Install all ROS dependencies
+RUN apt-get -q update \
+    && apt-get -q -y upgrade \
+    && rosdep update \
+    && rosdep install -y --from-paths src --ignore-src -r --rosdistro ${ROS_DISTRO} \
+    && rm -rf src \
+    && apt-get autoremove -y \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN . "/opt/ros/${ROS_DISTRO}/setup.sh" \
+    && colcon build \
+    && sed -i "s#/opt/ros/\$ROS_DISTRO/setup.bash#$USER_WORKSPACE/setup.sh#g" /ros_entrypoint.sh \
+    && echo "source ${USER_WORKSPACE}/install/setup.bash" >> /home/$USERNAME/.bashrc \
+    && echo "if [ -f /opt/ros/${ROS_DISTRO}/setup.bash ]; then source /opt/ros/${ROS_DISTRO}/setup.bash; fi" >> /home/$USERNAME/.bashrc
