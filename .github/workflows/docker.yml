@@ -55,7 +55,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           push: ${{ env.PUSH }}
-  develop:
+  base:
     strategy:
       fail-fast: false
       matrix:
