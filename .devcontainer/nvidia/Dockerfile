@@ -3,18 +3,18 @@ FROM ghcr.io/dawsonc/micro-g-robotics:humble-base
 # Install ROS dependencies
 # This is done in a previous stage, but we include it again here in case anyone wants to
 # add new dependencies during development
-RUN apt-get -q update \
-    && apt-get -q -y upgrade \
+RUN sudo apt-get -q update \
+    && sudo apt-get -q -y upgrade \
     && rosdep update \
     && rosdep install -y --from-paths . --ignore-src -r --rosdistro ${ROS_DISTRO} \
     && rm -rf src \
-    && apt-get autoremove -y \
-    && apt-get clean -y \
-    && rm -rf /var/lib/apt/lists/*
+    && sudo apt-get autoremove -y \
+    && sudo apt-get clean -y \
+    && sudo rm -rf /var/lib/apt/lists/*
 
 # Install NVIDIA software
-RUN apt-get update \
-    && apt-get install -y -qq --no-install-recommends \
+RUN sudo apt-get update \
+    && sudo apt-get install -y -qq --no-install-recommends \
     libglvnd0 \
     libgl1 \
     libglx0 \
@@ -28,7 +28,7 @@ ENV NVIDIA_DRIVER_CAPABILITIES graphics,utility,compute
 ENV QT_X11_NO_MITSHM 1
 
 # Install debugging/linting Python packages
-COPY requirements-dev.txt .
+COPY --chown=$USER_UID:$USER_GID requirements-dev.txt .
 RUN python3 -m pip install -r requirements-dev.txt \
     && rm -rf requirements-dev.txt
 

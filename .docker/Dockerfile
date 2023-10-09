@@ -46,29 +46,32 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME \
     && echo "source /usr/share/bash-completion/completions/git" >> /home/$USERNAME/.bashrc
 
+# Switch to the non-root user
+USER $USERNAME
+ENV USER=$USERNAME
+
 # Download and install external repos used by the project
 ENV DEBIAN_FRONTEND=noninteractive
 ENV USER_WORKSPACE=/home/$USERNAME/ws_micro_g
 WORKDIR $USER_WORKSPACE
 
-COPY . src/micro-g-robotics
+COPY --chown=$USER_UID:$USER_GID . src/micro-g-robotics
+RUN vcs import src < src/micro-g-robotics/micro_g.repos
 
-RUN apt-get -q update\
-    && apt-get -q -y upgrade \
-    && vcs import src < src/micro-g-robotics/micro_g.repos
+# Install interbotix interfaces
+RUN /bin/bash $USER_WORKSPACE/src/interbotix_ros_manipulators/interbotix_ros_xsarms/install/amd64/xsarm_amd64_install.sh -d humble -p $USER_WORKSPACE -n
 
 # Install all ROS dependencies
-RUN apt-get -q update \
-    && apt-get -q -y upgrade \
+RUN sudo apt-get -q update \
+    && sudo apt-get -q -y upgrade \
     && rosdep update \
     && rosdep install -y --from-paths src --ignore-src -r --rosdistro ${ROS_DISTRO} \
-    && rm -rf src \
-    && apt-get autoremove -y \
-    && apt-get clean -y \
-    && rm -rf /var/lib/apt/lists/*
+    && sudo apt-get autoremove -y \
+    && sudo apt-get clean -y \
+    && sudo rm -rf /var/lib/apt/lists/*
 
 RUN . "/opt/ros/${ROS_DISTRO}/setup.sh" \
     && colcon build \
-    && sed -i "s#/opt/ros/\$ROS_DISTRO/setup.bash#$USER_WORKSPACE/setup.sh#g" /ros_entrypoint.sh \
+    && sudo sed -i "s#/opt/ros/\$ROS_DISTRO/setup.bash#$USER_WORKSPACE/setup.sh#g" /ros_entrypoint.sh \
     && echo "source ${USER_WORKSPACE}/install/setup.bash" >> /home/$USERNAME/.bashrc \
     && echo "if [ -f /opt/ros/${ROS_DISTRO}/setup.bash ]; then source /opt/ros/${ROS_DISTRO}/setup.bash; fi" >> /home/$USERNAME/.bashrc
