@@ -1,0 +1,7 @@
+# ignore everything
+*
+
+# Except the following
+!micro_g
+!micro_g.repos
+!requirements-dev.txt
