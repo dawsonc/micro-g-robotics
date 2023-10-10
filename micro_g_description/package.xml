@@ -18,8 +18,8 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <!-- <depend>ros-gz</depend>
-  <depend>ros_gz_bridge</depend> -->
+  <depend>ros_gz</depend>
+  <depend>ros_gz_bridge</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

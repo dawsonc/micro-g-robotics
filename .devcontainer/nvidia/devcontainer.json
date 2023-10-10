@@ -1,6 +1,6 @@
 {
   "name": "Micro-G Robotics NVIDIA",
-  "dockerFile": "../../.docker/Dockerfile",
+  "dockerFile": "Dockerfile",
   "context": "../..",
   "build": {
     "args": {

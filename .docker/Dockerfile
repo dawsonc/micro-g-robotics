@@ -1,5 +1,5 @@
 ARG ROS_DISTRO=humble
-FROM ros:$ROS_DISTRO-ros-base as ci
+FROM osrf/ros:$ROS_DISTRO-desktop as ci
 
 ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /root/ws_micro_g
@@ -18,6 +18,7 @@ RUN apt-get -q update \
     clang-tools \
     python3-pip \
     python3-dev \
+    apt-utils \
     software-properties-common \
     && apt-get autoremove -y \
     && apt-get clean -y \
@@ -47,6 +48,7 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && echo "source /usr/share/bash-completion/completions/git" >> /home/$USERNAME/.bashrc
 
 # Switch to the non-root user
+# The interbotix installation requires us to use the non-root user
 USER $USERNAME
 ENV USER=$USERNAME
 
@@ -58,9 +60,6 @@ WORKDIR $USER_WORKSPACE
 COPY --chown=$USER_UID:$USER_GID . src/micro-g-robotics
 RUN vcs import src < src/micro-g-robotics/micro_g.repos
 
-# Install interbotix interfaces
-RUN /bin/bash $USER_WORKSPACE/src/interbotix_ros_manipulators/interbotix_ros_xsarms/install/amd64/xsarm_amd64_install.sh -d humble -p $USER_WORKSPACE -n
-
 # Install all ROS dependencies
 RUN sudo apt-get -q update \
     && sudo apt-get -q -y upgrade \
@@ -69,6 +68,9 @@ RUN sudo apt-get -q update \
     && sudo apt-get autoremove -y \
     && sudo apt-get clean -y \
     && sudo rm -rf /var/lib/apt/lists/*
+
+# Install interbotix interfaces
+RUN /bin/bash $USER_WORKSPACE/src/interbotix_ros_manipulators/interbotix_ros_xsarms/install/amd64/xsarm_amd64_install.sh -d humble -p $USER_WORKSPACE -n
 
 RUN . "/opt/ros/${ROS_DISTRO}/setup.sh" \
     && colcon build \
