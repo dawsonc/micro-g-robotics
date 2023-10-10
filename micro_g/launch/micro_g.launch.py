@@ -36,9 +36,9 @@ def generate_launch_description() -> LaunchDescription:
     args = [
         DeclareLaunchArgument(
             "use_sim",
-            default_value=False,
+            default_value="false",
             description="Launch the micro-g simulation environment.",
-        )
+        ),
     ]
 
     use_sim = LaunchConfiguration("use_sim")

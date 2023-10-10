@@ -3,6 +3,7 @@ FROM ghcr.io/dawsonc/micro-g-robotics:humble-base
 # Install ROS dependencies
 # This is done in a previous stage, but we include it again here in case anyone wants to
 # add new dependencies during development
+ENV USERNAME=buzz
 ENV USER_WORKSPACE=/home/$USERNAME/ws_micro_g
 WORKDIR $USER_WORKSPACE
 
@@ -40,8 +41,8 @@ RUN python3 -m pip install -r requirements-dev.txt \
 # This prevents us from needing to pin the setuputils version (which doesn't always work)
 ENV PYTHONWARNINGS="ignore"
 
-# Use the same non-root user as the base image
-ENV USERNAME=buzz
-
 ARG WORKSPACE
 RUN echo "if [ -f ${WORKSPACE}/install/setup.bash ]; then source ${WORKSPACE}/install/setup.bash; fi" >> /home/$USERNAME/.bashrc
+
+# Include the current workspace in the Gazebo environment search path
+ENV IGN_GAZEBO_RESOURCE_PATH=$WORKSPACE/install/micro_g_description/share/micro_g_description/gazebo/worlds:$IGN_GAZEBO_RESOURCE_PATH

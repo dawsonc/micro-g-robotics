@@ -28,17 +28,17 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description() -> LaunchDescription:
-    """Generate a launch description to run the system.
+    """Generate a launch description to run the Gazebo simulator.
 
     Returns:
-        The launch description for the micro-g system.
+        The launch description for the micro-g simulator.
     """
     args = [
         DeclareLaunchArgument(
             "gz_world_file",
-            default_value=False,
+            default_value="micro_g.world",
             description="The Gazebo world file to launch.",
-        )
+        ),
     ]
 
     nodes = [
@@ -51,12 +51,12 @@ def generate_launch_description() -> LaunchDescription:
             ],
             output="both",
         ),
-        Node(
-            package="ros_gz_sim",
-            executable="create",
-            arguments=["-name", "micro-g-bot", "-topic", "robot_description"],
-            output="both",
-        ),
+        # Node(
+        #     package="ros_gz_sim",
+        #     executable="create",
+        #     arguments=["-name", "micro-g-bot", "-topic", "robot_description"],
+        #     output="both",
+        # ),
     ]
 
     includes = [

@@ -72,6 +72,10 @@ RUN sudo apt-get -q update \
 # Install interbotix interfaces
 RUN /bin/bash $USER_WORKSPACE/src/interbotix_ros_manipulators/interbotix_ros_xsarms/install/amd64/xsarm_amd64_install.sh -d humble -p $USER_WORKSPACE -n
 
+# Setup the ROS environment
+ENV IGN_GAZEBO_RESOURCE_PATH=$USER_WORKSPACE/install/micro_g_description/gazebo/worlds:$IGN_GAZEBO_RESOURCE_PATH
+ENV IGN_GAZEBO_RESOURCE_PATH=$USER_WORKSPACE/install/interbotix_xsarm_descriptions/share/interbotix_xsarm_descriptions/meshes:$IGN_GAZEBO_RESOURCE_PATH
+
 RUN . "/opt/ros/${ROS_DISTRO}/setup.sh" \
     && colcon build \
     && sudo sed -i "s#/opt/ros/\$ROS_DISTRO/setup.bash#$USER_WORKSPACE/setup.sh#g" /ros_entrypoint.sh \

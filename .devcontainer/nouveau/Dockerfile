@@ -3,6 +3,7 @@ FROM ghcr.io/dawsonc/micro-g-robotics:humble-base
 # Install ROS dependencies
 # This is done in a previous stage, but we include it again here in case anyone wants to
 # add new dependencies during development
+ENV USERNAME=buzz
 ENV USER_WORKSPACE=/home/$USERNAME/ws_micro_g
 WORKDIR $USER_WORKSPACE
 
@@ -30,3 +31,6 @@ ENV USERNAME=buzz
 
 ARG WORKSPACE
 RUN echo "if [ -f ${WORKSPACE}/install/setup.bash ]; then source ${WORKSPACE}/install/setup.bash; fi" >> /home/$USERNAME/.bashrc
+
+# Include the current workspace in the Gazebo environment search path
+ENV IGN_GAZEBO_RESOURCE_PATH=$WORKSPACE/install/micro_g_description/share/micro_g_description/gazebo/worlds:$IGN_GAZEBO_RESOURCE_PATH
