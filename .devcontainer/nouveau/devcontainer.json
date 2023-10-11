@@ -24,6 +24,7 @@
     "XDG_RUNTIME_DIR": "${localEnv:XDG_RUNTIME_DIR}",
     "PULSE_SERVER": "${localEnv:PULSE_SERVER}"
   },
+  "postCreateCommand": "sudo service udev restart && sudo udevadm control --reload-rules",
   "customizations": {
     "vscode": {
       "settings": {
@@ -59,13 +60,17 @@
         "C_Cpp.codeAnalysis.clangTidy.runAutomatically": true,
         "clang-format.executable": "/usr/bin/clang-format-14",
         "[cpp]": {
-          "editor.rulers": [100],
+          "editor.rulers": [
+            100
+          ],
           "editor.tabSize": 2,
           "editor.defaultFormatter": "xaver.clang-format"
         },
         "[python]": {
           "editor.tabSize": 4,
-          "editor.rulers": [90],
+          "editor.rulers": [
+            90
+          ],
           "editor.formatOnSave": true,
           "editor.codeActionsOnSave": {
             "source.fixAll": true
@@ -86,7 +91,9 @@
           "editor.defaultFormatter": "redhat.vscode-xml"
         },
         "[markdown]": {
-          "editor.rulers": [80],
+          "editor.rulers": [
+            80
+          ],
           "editor.defaultFormatter": "DavidAnson.vscode-markdownlint"
         },
         "search.exclude": {
