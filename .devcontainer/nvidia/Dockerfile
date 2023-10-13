@@ -40,9 +40,3 @@ RUN python3 -m pip install -r requirements-dev.txt \
 # Disable the setuputils installation warning
 # This prevents us from needing to pin the setuputils version (which doesn't always work)
 ENV PYTHONWARNINGS="ignore"
-
-ARG WORKSPACE
-RUN echo "if [ -f ${WORKSPACE}/install/setup.bash ]; then source ${WORKSPACE}/install/setup.bash; fi" >> /home/$USERNAME/.bashrc
-
-# Include the current workspace in the Gazebo environment search path
-ENV IGN_GAZEBO_RESOURCE_PATH=$WORKSPACE/install/micro_g_description/share/micro_g_description/gazebo/worlds:$IGN_GAZEBO_RESOURCE_PATH

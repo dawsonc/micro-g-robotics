@@ -2,11 +2,8 @@
   "name": "Micro-G Robotics NVIDIA",
   "dockerFile": "Dockerfile",
   "context": "../..",
-  "build": {
-    "args": {
-      "WORKSPACE": "${containerWorkspaceFolder}"
-    }
-  },
+  "workspaceMount": "source=${localWorkspaceFolder},target=/home/buzz/ws_micro_g/src/micro-g-robotics,type=bind",
+  "workspaceFolder": "/home/buzz/ws_micro_g/src/micro-g-robotics",
   "remoteUser": "buzz",
   "runArgs": [
     "--network=host",
