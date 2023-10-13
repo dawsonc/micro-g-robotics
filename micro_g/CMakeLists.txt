@@ -2,10 +2,19 @@ cmake_minimum_required(VERSION 3.8)
 project(micro_g)
 
 find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_python REQUIRED)
+
 
 install(
   DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}
+)
+
+install(
+  PROGRAMS
+    scripts/pose_servoing_controller.py
+  DESTINATION
+    lib/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)
