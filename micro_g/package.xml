@@ -17,9 +17,6 @@
   <author>Charles Dawson</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <depend>interbotix_xs_msgs</depend>
-  <depend>interbotix_xs_modules</depend>
-  <depend>interbotix_xsarm_control</depend>
   <depend>launch</depend>
   <depend>launch_ros</depend>
   <depend>rclpy</depend>
