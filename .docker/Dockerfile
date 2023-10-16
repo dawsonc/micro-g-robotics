@@ -28,7 +28,7 @@ RUN apt-get -q update \
 RUN apt-get -q update \
     && apt-get -q -y upgrade \
     && rosdep update \
-    && rosdep install -y --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} --as-root=apt:false \
+    && rosdep install -y --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} --as-root=apt:false --skip-keys="interbotix_xs_msgs interbotix_xs_modules interbotix_xsarm_control"\
     && rm -rf src \
     && apt-get autoremove -y \
     && apt-get clean -y \
