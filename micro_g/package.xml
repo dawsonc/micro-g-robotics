@@ -20,6 +20,7 @@
   <depend>interbotix_xs_msgs</depend>
   <depend>interbotix_xs_modules</depend>
   <depend>interbotix_xsarm_control</depend>
+  <depend>python-transforms3d-pip</depend>
   <depend>launch</depend>
   <depend>launch_ros</depend>
   <depend>rclpy</depend>
