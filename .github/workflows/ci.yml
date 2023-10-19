@@ -42,3 +42,4 @@ jobs:
             -Wall -Wextra -Wpedantic -Wwrite-strings -Wunreachable-code -Wpointer-arith -Wredundant-decls
           CC: ${{ env.CLANG_TIDY && 'clang' }}
           CXX: ${{ env.CLANG_TIDY && 'clang++' }}
+          ROSDEP_SKIP_KEYS: interbotix_xs_msgs interbotix_xs_modules interbotix_xsarm_control
