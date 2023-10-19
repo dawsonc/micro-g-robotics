@@ -148,16 +148,22 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
 
         # Project the desired pose into the plane of the arm by zeroing the y coordinate
         T_yd[1, 3] = 0.0
-        # Convert back to space frame
-        T_sd = np.dot(self.T_sy, T_yd)
 
-        # Send to the robot
-        self.arm.capture_joint_positions()
-        _, success = self.arm.set_ee_pose_matrix(
-            T_sd=T_sd,
-            custom_guess=self.arm.get_joint_commands(),
-            execute=True,
-            blocking=False,
+        # Get the relative x, y, z, roll, pitch, yaw between the current pose and T_sd
+        T_sb = self.arm.get_ee_pose_command()
+        T_yb = np.dot(T_ys, T_sb)
+        position_offset = T_yd[:3, 3] - T_yb[:3, 3]
+        rpy_yb = np.array(ang.rotation_matrix_to_euler_angles(T_yb[:3, :3]))
+        rpy_yd = np.array(ang.rotation_matrix_to_euler_angles(T_yd[:3, :3]))
+        rpy_offset = rpy_yd - rpy_yb
+
+        success = self.arm.set_ee_cartesian_trajectory(
+            x=position_offset[0],
+            y=0.0,
+            z=position_offset[2],
+            roll=rpy_offset[0],
+            pitch=rpy_offset[1],
+            yaw=0.0,
         )
 
         if not success:
