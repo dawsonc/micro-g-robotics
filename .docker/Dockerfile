@@ -34,8 +34,6 @@ RUN apt-get -q update \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
 
-FROM ci as base
-
 # Configure a new non-root user
 ARG USERNAME=buzz
 ARG USER_UID=1000
@@ -69,6 +67,8 @@ RUN sudo apt-get -q update \
     && sudo apt-get autoremove -y \
     && sudo apt-get clean -y \
     && sudo rm -rf /var/lib/apt/lists/*
+
+FROM ci as base
 
 # Install interbotix interfaces (requires udev)
 RUN sudo apt-get -q update \
