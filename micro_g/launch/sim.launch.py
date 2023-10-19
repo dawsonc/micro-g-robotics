@@ -28,10 +28,13 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description() -> LaunchDescription:
-    """Generate a launch description to run the Gazebo simulator.
+    """
+    Generate a launch description to run the Gazebo simulator.
 
-    Returns:
+    Returns
+    -------
         The launch description for the micro-g simulator.
+
     """
     args = [
         DeclareLaunchArgument(

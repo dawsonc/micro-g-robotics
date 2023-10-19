@@ -34,9 +34,7 @@ from tf2_geometry_msgs import do_transform_pose
 
 
 class XSArmPoseServoingController(InterbotixManipulatorXS):
-    """
-    Tracks a published end effector pose.
-    """
+    """Tracks a published end effector pose."""
 
     def __init__(
         self,
@@ -47,15 +45,17 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         xs_args=None,
     ):
         """
-        Create the controller
+        Create the controller.
 
-        Args:
+        Args
+        ----
             robot_model: the robot model
             robot_name: the robot name
             control_update_rate: the rate at which the controller is updated (Hz).
             moving_time: the duration in which all movements should take place (s).
             xs_args: Extra arguments to be passed to InterbotixManipulatorXS. Defaults
                 to None.
+
         """
         # Initialize the interface to the arm
         InterbotixManipulatorXS.__init__(
@@ -108,10 +108,12 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
 
     def desired_pose_callback(self, msg: PoseStamped):
         """
-        Process a desired pose
+        Process a desired pose.
 
-        Args:
+        Args
+        ----
             msg: A PoseStamped message
+
         """
         # Transform the pose into the base link frame
         try:

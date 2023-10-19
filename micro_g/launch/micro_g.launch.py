@@ -28,10 +28,13 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description() -> LaunchDescription:
-    """Generate a launch description to run the system.
+    """
+    Generate a launch description to run the system.
 
-    Returns:
+    Returns
+    -------
         The launch description for the micro-g system.
+
     """
     args = [
         DeclareLaunchArgument(
