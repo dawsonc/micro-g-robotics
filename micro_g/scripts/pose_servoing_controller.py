@@ -43,7 +43,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         robot_model: str,
         robot_name: str,
         control_update_rate: float = 10.0,
-        moving_time: float = 1.0,
+        moving_time: float = 0.5,
         xs_args=None,
     ):
         """
@@ -152,6 +152,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         T_sd = np.dot(self.T_sy, T_yd)
 
         # Send to the robot
+        self.arm.capture_joint_positions()
         _, success = self.arm.set_ee_pose_matrix(
             T_sd=T_sd,
             custom_guess=self.arm.get_joint_commands(),
