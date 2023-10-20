@@ -28,6 +28,7 @@ import transforms3d
 from geometry_msgs.msg import PoseStamped
 from interbotix_common_modules.angle_manipulation import angle_manipulation as ang
 from interbotix_xs_modules.xs_robot.arm import InterbotixManipulatorXS
+from rclpy.qos import qos_profile_system_default
 from rclpy.utilities import remove_ros_args
 from tf2_geometry_msgs import do_transform_pose
 
@@ -57,8 +58,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
 
         """
         # Initialize the interface to the arm
-        InterbotixManipulatorXS.__init__(
-            self,
+        super().__init__(
             robot_model=robot_model,
             robot_name=robot_name,
             start_on_init=True,
@@ -75,7 +75,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         # Frames are:
         #   - s = space frame, fixed to the robot's base link
         #   - y = yaw frame, same as s but rotated about z by the current waist angle
-        #   - b = body frame, fixed to the end effector
+        #   - b = end effector body frame (tool frame)
         #   - d = desired frame for the end effector
         self.T_sy = np.identity(4)
         self.T_sd = self.arm.get_ee_pose_command()
@@ -89,7 +89,10 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
 
         # Create a subscription to the pose that we will track
         self.core.create_subscription(
-            PoseStamped, "desired_eef_pose", self.desired_pose_callback, 10
+            PoseStamped,
+            "desired_eef_pose",
+            self.desired_pose_callback,
+            qos_profile_system_default,
         )
         time.sleep(0.5)
         self.core.get_logger().info("Ready to receive servoing commands.")
@@ -141,7 +144,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
             )
             raise (e)
 
-    def controller(self):
+    def update(self):
         """Run the controller and send commands to the robot."""
         # Convert the desired pose into the arm-aligned base frame
         T_ys = np.linalg.inv(self.T_sy)
@@ -175,7 +178,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         try:
             self.start()
             while rclpy.ok():
-                self.controller()
+                self.update()
                 self.rate.sleep()
         except KeyboardInterrupt:
             self.shutdown()
