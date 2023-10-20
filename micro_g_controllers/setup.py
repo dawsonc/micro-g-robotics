@@ -19,7 +19,7 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "pose_servoing_controller = micro_g_controllers.pose_servoing_controller:main"
+            "pose_servoing_controller=micro_g_controllers.pose_servoing_controller:main"
         ],
     },
 )
