@@ -48,7 +48,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         Create the controller.
 
         Args:
-        -----
+        ----
             robot_model: the robot model
             robot_name: the robot name
             control_update_rate: the rate at which the controller is updated (Hz).
@@ -113,7 +113,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         Process a desired pose.
 
         Args:
-        -----
+        ----
             msg: A PoseStamped message
 
         """
