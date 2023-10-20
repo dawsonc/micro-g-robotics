@@ -2,9 +2,9 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
 
-  <name>micro_g</name>
+  <name>micro_g_description</name>
   <version>0.0.1</version>
-  <description>Metapackage for micro-g</description>
+  <description>Description files for micro-g</description>
 
   <maintainer email="evanp922@gmail.com">Evan Palmer</maintainer>
   <maintainer email="charles.dwsn@gmail.com">Charles Dawson</maintainer>
@@ -17,8 +17,9 @@
   <author>Charles Dawson</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <depend>launch</depend>
-  <depend>launch_ros</depend>
+
+  <depend>ros_gz</depend>
+  <depend>ros_gz_bridge</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

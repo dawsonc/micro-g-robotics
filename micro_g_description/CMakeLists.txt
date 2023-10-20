@@ -1,12 +1,10 @@
 cmake_minimum_required(VERSION 3.8)
-project(micro_g)
+project(micro_g_description)
 
 find_package(ament_cmake REQUIRED)
-find_package(ament_cmake_python REQUIRED)
-
 
 install(
-  DIRECTORY launch
+  DIRECTORY gazebo
   DESTINATION share/${PROJECT_NAME}
 )
 

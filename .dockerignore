@@ -3,5 +3,6 @@
 
 # Except the following
 !micro_g
+!micro_g_description
 !micro_g.repos
 !requirements-dev.txt
