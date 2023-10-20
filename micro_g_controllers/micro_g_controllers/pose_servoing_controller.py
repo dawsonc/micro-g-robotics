@@ -28,6 +28,7 @@ import transforms3d
 from geometry_msgs.msg import PoseStamped
 from interbotix_common_modules.angle_manipulation import angle_manipulation as ang
 from interbotix_xs_modules.xs_robot.arm import InterbotixManipulatorXS
+from rcl_interfaces.msg import ParameterDescriptor, ParameterType
 from rclpy.qos import qos_profile_system_default
 from rclpy.utilities import remove_ros_args
 from tf2_geometry_msgs import do_transform_pose
@@ -40,7 +41,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         self,
         robot_model: str,
         robot_name: str,
-        control_update_rate: float = 10.0,
+        control_update_rate: float = 20.0,
         moving_time: float = 0.5,
         xs_args=None,
     ):
@@ -52,12 +53,16 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
             robot_model: the robot model
             robot_name: the robot name
             control_update_rate: the rate at which the controller is updated (Hz).
+                This can also be set via a ROS parameter `control_update_rate`.
             moving_time: the duration in which all movements should take place (s).
+                This can also be set via a ROS parameter `control_update_rate`.
             xs_args: Extra arguments to be passed to InterbotixManipulatorXS. Defaults
                 to None.
 
         """
         # Initialize the interface to the arm
+        # We need robot_model and robot_name to initialize the ROS node and namespace,
+        # so these cannot be ROS parameters.
         super().__init__(
             robot_model=robot_model,
             robot_name=robot_name,
@@ -67,6 +72,25 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
             args=xs_args,
             node_name="pose_servoing",
         )
+
+        # Declare ROS parameters
+        control_rate_desc = ParameterDescriptor(
+            type=ParameterType.PARAMETER_DOUBLE, description="Control update rate in Hz"
+        )
+        moving_time_desc = ParameterDescriptor(
+            type=ParameterType.PARAMETER_DOUBLE, description="Moving time in seconds"
+        )
+        self.core.declare_parameter(
+            "control_update_rate", 20.0, descriptor=control_rate_desc
+        )
+        self.core.declare_parameter("moving_time", 0.2, descriptor=moving_time_desc)
+
+        # Get ROS parameters
+        control_update_rate = self.core.get_parameter("control_update_rate").value
+        moving_time = self.core.get_parameter("moving_time").value
+
+        # Update the moving time (and set acceleration time to half of moving time)
+        self.arm.set_trajectory_time(moving_time, moving_time / 2.0)
 
         # Set the controller update rate
         self.rate = self.core.create_rate(control_update_rate)
