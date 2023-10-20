@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # Copyright 2023, Micro-G Dev Team
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -47,8 +46,8 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         """
         Create the controller.
 
-        Args
-        ----
+        Args:
+        -----
             robot_model: the robot model
             robot_name: the robot name
             control_update_rate: the rate at which the controller is updated (Hz).
@@ -110,8 +109,8 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         """
         Process a desired pose.
 
-        Args
-        ----
+        Args:
+        -----
             msg: A PoseStamped message
 
         """
@@ -182,7 +181,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
             self.shutdown()
 
 
-if __name__ == "__main__":
+def main():
     # Get command line arguments
     p = argparse.ArgumentParser()
     p.add_argument("--robot_model", required=True)
@@ -194,3 +193,7 @@ if __name__ == "__main__":
 
     bot = XSArmPoseServoingController(ros_args.robot_model, ros_args.robot_name)
     bot.start_robot()
+
+
+if __name__ == "__main__":
+    main()
