@@ -22,31 +22,24 @@
 #include <gz/sim/System.hh>
 #include <memory>
 
-namespace micro_g
-{
+namespace micro_g {
 
 // Forward declare private data class
 class TargetSpawnerPluginPrivate;
 
 class TargetSpawnerPlugin : public gz::sim::System,
                             public gz::sim::ISystemConfigure,
-                            public gz::sim::ISystemPostUpdate,
-                            public gz::sim::ISystemPreUpdate
-{
+                            public gz::sim::ISystemPreUpdate {
 public:
   TargetSpawnerPlugin();
 
-  void Configure(
-    const gz::sim::Entity & _entity, const std::shared_ptr<const sdf::Element> & _sdf,
-    gz::sim::EntityComponentManager & _ecm, gz::sim::EventManager & _eventMgr) override;
+  void Configure(const gz::sim::Entity & _entity,
+                 const std::shared_ptr<const sdf::Element> & _sdf,
+                 gz::sim::EntityComponentManager & _ecm,
+                 gz::sim::EventManager & /*_eventMgr*/) override;
 
-  void PreUpdate(
-    const gz::sim::UpdateInfo & _info, gz::sim::EntityComponentManager & _ecm) override;
-
-  void Update(const gz::sim::UpdateInfo & _info, gz::sim::EntityComponentManager & _ecm) override;
-
-  void PostUpdate(
-    const gz::sim::UpdateInfo & _info, const gz::sim::EntityComponentManager & _ecm) override;
+  void PreUpdate(const gz::sim::UpdateInfo & _info,
+                 gz::sim::EntityComponentManager & _ecm) override;
 
 private:
   std::unique_ptr<TargetSpawnerPluginPrivate> dataPtr;

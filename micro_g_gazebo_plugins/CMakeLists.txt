@@ -1,26 +1,40 @@
-cmake_minimum_required(VERSION 3.8)
-project(micro_g_plugins)
+cmake_minimum_required(VERSION 3.10.2 FATAL_ERROR)
 
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
-endif()
+project(micro_g_gazebo_plugins)
 
-# find dependencies
-find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+find_package(ignition-cmake2 REQUIRED)
 
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # comment the line when a copyright and license is added to all source files
-  set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # comment the line when this package is in a git repo and when
-  # a copyright and license is added to all source files
-  set(ament_cmake_cpplint_FOUND TRUE)
-  ament_lint_auto_find_test_dependencies()
-endif()
+find_package(ignition-plugin1 REQUIRED COMPONENTS register)
+set(IGN_PLUGIN_VER ${ignition-plugin1_VERSION_MAJOR})
 
-ament_package()
+find_package(ignition-gazebo6 REQUIRED)
+set(IGN_SIM_VER ${ignition-gazebo6_VERSION_MAJOR})
+
+find_package(ignition-utils1 REQUIRED)
+set(IGN_UTILS_VER ${ignition-utils1_VERSION_MAJOR})
+
+find_package(ignition-common4 REQUIRED COMPONENTS profiler)
+set(IGN_COMMON_VER ${ignition-common4_VERSION_MAJOR})
+
+add_library(TargetSpawnerPlugin SHARED src/TargetSpawnerPlugin.cc)
+
+set_property(TARGET TargetSpawnerPlugin PROPERTY CXX_STANDARD 17)
+
+target_link_libraries(TargetSpawnerPlugin
+  PRIVATE ignition-plugin${IGN_PLUGIN_VER}::ignition-plugin${IGN_PLUGIN_VER}
+  PRIVATE ignition-gazebo${IGN_SIM_VER}::ignition-gazebo${IGN_SIM_VER}
+  PRIVATE ignition-utils${IGN_UTILS_VER}::ignition-utils${IGN_UTILS_VER}
+  PRIVATE ignition-common${IGN_COMMON_VER}::ignition-common${IGN_COMMON_VER}
+)
+
+install(
+  DIRECTORY include/
+  DESTINATION include
+  FILES_MATCHING
+  PATTERN "*.hh"
+)
+
+install(
+  TARGETS TargetSpawnerPlugin
+  DESTINATION ${INSTALL_LIB}
+)
