@@ -92,6 +92,8 @@ void TargetSpawnerPlugin::Configure(const gz::sim::Entity & _entity,
 
 void TargetSpawnerPlugin::PreUpdate(const gz::sim::UpdateInfo & /*_info*/,
                                     gz::sim::EntityComponentManager & _ecm) {
+  std::lock_guard<std::mutex> lock(this->dataPtr->mtx);
+
   // Set the desired velocities
   auto linearVelComp =
     _ecm.Component<gz::sim::components::LinearVelocity>(this->dataPtr->linkEntity);
