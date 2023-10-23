@@ -21,10 +21,16 @@
 from launch import LaunchDescription
 from launch.conditions import IfCondition
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import (
+    LaunchConfiguration,
+    PathJoinSubstitution,
+    Command,
+    FindExecutable,
+)
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.substitutions import FindPackageShare
+from launch_ros.actions import Node
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -42,9 +48,59 @@ def generate_launch_description() -> LaunchDescription:
             default_value="false",
             description="Launch the micro-g simulation environment.",
         ),
+        DeclareLaunchArgument(
+            "prefix",
+            default_value="",
+            description=("The prefix of the model. Expected format '<prefix>/'."),
+        ),
+        DeclareLaunchArgument(
+            "description_package",
+            default_value="micro_g_description",
+            description=(
+                "The project description package. This package should include the"
+                " description files to launch."
+            ),
+        ),
     ]
 
     use_sim = LaunchConfiguration("use_sim")
+    prefix = LaunchConfiguration("prefix")
+    description_package = LaunchConfiguration("description_package")
+
+    robot_description = Command(
+        [
+            PathJoinSubstitution([FindExecutable(name="xacro")]),
+            " ",
+            PathJoinSubstitution(
+                [
+                    FindPackageShare(description_package),
+                    "xacro",
+                    "target",
+                    "config.xacro",
+                ]
+            ),
+            " ",
+            "prefix:=",
+            prefix,
+            " ",
+            "use_sim:=",
+            use_sim,
+            " ",
+            "description_package:=",
+            description_package,
+        ]
+    )
+
+    nodes = [
+        Node(
+            package="robot_state_publisher",
+            executable="robot_state_publisher",
+            output="both",
+            parameters=[
+                {"use_sim_time": use_sim, "robot_description": robot_description}
+            ],
+        ),
+    ]
 
     includes = [
         IncludeLaunchDescription(
@@ -63,4 +119,4 @@ def generate_launch_description() -> LaunchDescription:
         ),
     ]
 
-    return LaunchDescription(args + includes)
+    return LaunchDescription(args + includes + nodes)

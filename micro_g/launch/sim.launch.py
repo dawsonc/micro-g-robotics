@@ -54,12 +54,12 @@ def generate_launch_description() -> LaunchDescription:
             ],
             output="both",
         ),
-        # Node(
-        #     package="ros_gz_sim",
-        #     executable="create",
-        #     arguments=["-name", "micro-g-bot", "-topic", "robot_description"],
-        #     output="both",
-        # ),
+        Node(
+            package="ros_gz_sim",
+            executable="create",
+            arguments=["-name", "micro-g-bot", "-topic", "robot_description"],
+            output="both",
+        ),
     ]
 
     includes = [

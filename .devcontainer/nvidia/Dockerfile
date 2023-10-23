@@ -40,3 +40,5 @@ RUN python3 -m pip install -r requirements-dev.txt \
 # Disable the setuputils installation warning
 # This prevents us from needing to pin the setuputils version (which doesn't always work)
 ENV PYTHONWARNINGS="ignore"
+
+ENV IGN_GAZEBO_RESOURCE_PATH=$USER_WORKSPACE/install/micro_g_description/share/micro_g_description/gazebo/worlds:$IGN_GAZEBO_RESOURCE_PATH

@@ -20,6 +20,8 @@
 
 #include "TargetSpawnerPlugin.hh"
 
+#include <stdio.h>
+
 #include <gz/common/Console.hh>
 #include <gz/math/Vector3.hh>
 #include <gz/msgs.hh>
@@ -75,11 +77,13 @@ void TargetSpawnerPlugin::Configure(const gz::sim::Entity & _entity,
   auto linkName = _sdf->Get<std::string>("link_name");
   this->dataPtr->linkEntity = model.LinkByName(_ecm, linkName);
 
-  // if (gz::sim::kNullEntity == this->dataPtr->linkEntity) {
-  //   gzerr << "Failed to find a link named [" << linkName << "] in model [" << model.Name(_ecm)
-  //         << "]. Plugin failed to initialize." << std::endl;
-  //   return;
-  // }
+  if (gz::sim::kNullEntity == this->dataPtr->linkEntity) {
+    std::cout << "Failed to find a link named [" << linkName << "] in model [" << model.Name(_ecm)
+              << "]. Plugin failed to initialize." << std::endl;
+    // gzerr << "Failed to find a link named [" << linkName << "] in model [" << model.Name(_ecm)
+    //       << "]. Plugin failed to initialize." << std::endl;
+    return;
+  }
 
   // Add velocity components
   if (!_ecm.Component<gz::sim::components::LinearVelocity>(_entity)) {

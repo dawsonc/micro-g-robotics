@@ -4,7 +4,7 @@ project(micro_g_description)
 find_package(ament_cmake REQUIRED)
 
 install(
-  DIRECTORY gazebo
+  DIRECTORY gazebo xacro
   DESTINATION share/${PROJECT_NAME}
 )
 

@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<robot name="target_testing" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- Arguments -->
+  <xacro:arg name="prefix" default="" />
+  <xacro:arg name="use_sim" default="true" />
+  <xacro:arg name="description_package" default="micro_g_description" />
+
+  <!-- Properties -->
+  <xacro:property name="description_package" value="$(arg description_package)" />
+  <xacro:property name="prefix" value="$(arg prefix)" />
+  <xacro:property name="use_sim" value="$(arg use_sim)" />
+
+  <link name="base_footprint" />
+
+  <!-- Import target macro -->
+  <xacro:include filename="$(find ${description_package})/xacro/target/urdf.xacro" />
+
+  <xacro:target_urdf
+    parent="base_footprint"
+    prefix="${prefix}">
+    <origin xyz="0 0 1.0" rpy="0 0 0" />
+  </xacro:target_urdf>
+
+  <!-- Import the Gazebo macro -->
+  <xacro:if value="$(arg use_sim)">
+    <xacro:include filename="$(find ${description_package})/xacro/target/gazebo.xacro" />
+    <xacro:target_gazebo reference="$(arg prefix)target" />
+  </xacro:if>
+
+</robot>

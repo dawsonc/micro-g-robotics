@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:macro name="target_gazebo">
+
+    <!-- Configure the target's initial velocities -->
+    <gazebo>
+      <plugin
+        filename="ignition-gazebo-velocity-control-system"
+        name="ignition::gazebo::systems::VelocityControl">
+        <initial_linear>0.2 0 0</initial_linear>
+        <initial_angular>0 0 0</initial_angular>
+      </plugin>
+    </gazebo>
+
+  </xacro:macro>
+</robot>
