@@ -36,5 +36,10 @@
 
     <gravity>0.0 0.0 0.0</gravity>
 
+    <include>
+      <uri>model://moon</uri>
+      <pose>0 0 0 0 0 0</pose>
+    </include>
+
   </world>
 </sdf>
