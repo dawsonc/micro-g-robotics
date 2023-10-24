@@ -7,7 +7,7 @@
       <plugin
         filename="ignition-gazebo-velocity-control-system"
         name="ignition::gazebo::systems::VelocityControl">
-        <initial_linear>0.2 0 0</initial_linear>
+        <initial_linear>0 0 0</initial_linear>
         <initial_angular>0 0 0</initial_angular>
       </plugin>
     </gazebo>

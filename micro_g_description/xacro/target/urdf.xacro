@@ -2,7 +2,7 @@
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
   <xacro:macro name="target_urdf" params="prefix parent *origin">
 
-    <link name="${prefix}target">
+    <link name="${prefix}target_link">
       <inertial>
         <mass value="0.0001" />
         <inertia
@@ -16,13 +16,13 @@
       </inertial>
       <visual>
         <geometry>
-          <box size="0.5 0.5 0.5" />
+          <box size="0.02 0.02 0.02" />
         </geometry>
         <xacro:insert_block name="origin" />
       </visual>
       <collision>
         <geometry>
-          <box size="0.5 0.5 0.5" />
+          <box size="0.02 0.02 0.02" />
         </geometry>
         <xacro:insert_block name="origin" />
       </collision>
@@ -30,17 +30,8 @@
 
     <joint name="${prefix}base_footprint_joint" type="fixed">
       <parent link="${prefix}base_footprint" />
-      <child link="${prefix}target" />
+      <child link="${prefix}target_link" />
     </joint>
-
-    <gazebo reference="${prefix}target">
-      <plugin
-        filename="gz-sim-velocity-control-system"
-        name="gz::sim::systems::VelocityControl">
-        <initial_linear>0.2 0 0</initial_linear>
-        <initial_angular>0 0 0</initial_angular>
-      </plugin>
-    </gazebo>
 
   </xacro:macro>
 </robot>

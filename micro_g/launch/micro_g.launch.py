@@ -67,7 +67,7 @@ def generate_launch_description() -> LaunchDescription:
     prefix = LaunchConfiguration("prefix")
     description_package = LaunchConfiguration("description_package")
 
-    robot_description = Command(
+    target_description = Command(
         [
             PathJoinSubstitution([FindExecutable(name="xacro")]),
             " ",
@@ -76,6 +76,30 @@ def generate_launch_description() -> LaunchDescription:
                     FindPackageShare(description_package),
                     "xacro",
                     "target",
+                    "config.xacro",
+                ]
+            ),
+            " ",
+            "prefix:=",
+            prefix,
+            " ",
+            "use_sim:=",
+            use_sim,
+            " ",
+            "description_package:=",
+            description_package,
+        ]
+    )
+
+    robot_description = Command(
+        [
+            PathJoinSubstitution([FindExecutable(name="xacro")]),
+            " ",
+            PathJoinSubstitution(
+                [
+                    FindPackageShare(description_package),
+                    "xacro",
+                    "px100",
                     "config.xacro",
                 ]
             ),
@@ -115,6 +139,10 @@ def generate_launch_description() -> LaunchDescription:
                     )
                 ]
             ),
+            launch_arguments={
+                "robot_description": robot_description,
+                "target_description": target_description,
+            }.items(),
             condition=IfCondition(use_sim),
         ),
     ]

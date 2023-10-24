@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<robot name="px100" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- Arguments -->
+  <xacro:arg name="prefix" default="" />
+  <xacro:arg name="use_sim" default="true" />
+  <xacro:arg name="use_fake_hardware" default="true" />
+  <xacro:arg name="description_package" default="micro_g_description" />
+
+  <!-- Properties -->
+  <xacro:property name="description_package" value="$(arg description_package)" />
+  <xacro:property name="prefix" value="$(arg prefix)" />
+  <xacro:property name="use_sim" value="$(arg use_sim)" />
+  <xacro:property name="use_fake_hardware" value="$(arg use_fake_hardware)" />
+
+  <!-- Create a dummy link for the robot to attach to -->
+  <link name="base_footprint" />
+
+  <!-- Imports -->
+  <xacro:include filename="$(find ${description_package})/xacro/px100/urdf.xacro" />
+  <xacro:include filename="$(find ${description_package})/xacro/px100/ros2_control.xacro" />
+
+  <xacro:px100_system
+    prefix="${prefix}"
+    use_sim="${use_sim}"
+    use_fake_hardware="${use_fake_hardware}"
+  />
+
+  <xacro:px100_urdf prefix="${prefix}" parent="base_footprint" use_sim="${use_sim}">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+  </xacro:px100_urdf>
+
+</robot>

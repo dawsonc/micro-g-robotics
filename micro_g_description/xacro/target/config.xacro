@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<robot name="target_testing" xmlns:xacro="http://ros.org/wiki/xacro">
+<robot name="target" xmlns:xacro="http://ros.org/wiki/xacro">
 
   <!-- Arguments -->
   <xacro:arg name="prefix" default="" />
@@ -13,19 +13,17 @@
 
   <link name="base_footprint" />
 
-  <!-- Import target macro -->
+  <!-- Imports -->
   <xacro:include filename="$(find ${description_package})/xacro/target/urdf.xacro" />
 
-  <xacro:target_urdf
-    parent="base_footprint"
-    prefix="${prefix}">
-    <origin xyz="0 0 1.0" rpy="0 0 0" />
+  <xacro:target_urdf parent="base_footprint" prefix="${prefix}">
+    <origin xyz="0.3 0 0.2" rpy="0 0 0" />
   </xacro:target_urdf>
 
   <!-- Import the Gazebo macro -->
-  <xacro:if value="$(arg use_sim)">
+  <xacro:if value="${use_sim}">
     <xacro:include filename="$(find ${description_package})/xacro/target/gazebo.xacro" />
-    <xacro:target_gazebo reference="$(arg prefix)target" />
+    <xacro:target_gazebo />
   </xacro:if>
 
 </robot>

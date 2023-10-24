@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<robot name="px100" xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:macro name="px100_system" params="prefix use_sim use_fake_hardware">
+
+    <!-- Interbotix magic numbers -->
+    <xacro:property name="pi_offset" value="0.00001" />
+
+    <ros2_control name="XSHardwareInterface" type="system">
+
+      <xacro:if value="$(arg use_sim)">
+        <hardware>
+          <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+        </hardware>
+      </xacro:if>
+
+      <xacro:unless value="$(arg use_sim)">
+        <hardware>
+          <xacro:if value="${use_fake_hardware}">
+            <plugin>mock_components/GenericSystem</plugin>
+          </xacro:if>
+          <xacro:unless value="${use_fake_hardware}">
+            <plugin>interbotix_xs_ros_control/XSHardwareInterface</plugin>
+            <param name="loop_hz">10</param>
+            <param name="group_name">arm</param>
+            <param name="gripper_name">gripper</param>
+            <param name="joint_states_topic">joint_states</param>
+          </xacro:unless>
+        </hardware>
+      </xacro:unless>
+
+      <joint name="${prefix}waist">
+        <command_interface name="position">
+          <param name="min">"${-pi + pi_offset}"</param>
+          <param name="max">"${pi - pi_offset}"</param>
+        </command_interface>
+        <state_interface name="position" />
+      </joint>
+
+      <joint name="${prefix}shoulder">
+        <command_interface name="position">
+          <param name="min">"${radians(-111)}"</param>
+          <param name="max">"${radians(107)}"</param>
+        </command_interface>
+        <state_interface name="position" />
+      </joint>
+
+      <joint name="${prefix}elbow">
+        <command_interface name="position">
+          <param name="min">"${radians(-121)}"</param>
+          <param name="max">"${radians(92)}"</param>
+        </command_interface>
+        <state_interface name="position" />
+      </joint>
+
+      <joint name="${prefix}wrist_angle">
+        <command_interface name="position">
+          <param name="min">"${radians(-100)}"</param>
+          <param name="max">"${radians(123)}"</param>
+        </command_interface>
+        <state_interface name="position" />
+      </joint>
+
+      <xacro:if value="${use_sim or use_fake_hardware}">
+        <joint name="gripper">
+          <command_interface name="position" />
+          <state_interface name="position" />
+        </joint>
+      </xacro:if>
+
+      <joint name="${prefix}left_finger">
+        <command_interface name="position">
+          <param name="min">"0.015"</param>
+          <param name="max">"-0.015"</param>
+        </command_interface>
+        <state_interface name="position" />
+      </joint>
+
+      <xacro:if value="${use_sim}">
+        <joint name="${prefix}right_finger">
+          <command_interface name="position">
+            <param name="min">"-0.015"</param>
+            <param name="max">"0.015"</param>
+          </command_interface>
+          <state_interface name="position" />
+        </joint>
+      </xacro:if>
+
+    </ros2_control>
+
+  </xacro:macro>
+</robot>

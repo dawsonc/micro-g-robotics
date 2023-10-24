@@ -42,6 +42,16 @@ def generate_launch_description() -> LaunchDescription:
             default_value="micro_g.world",
             description="The Gazebo world file to launch.",
         ),
+        DeclareLaunchArgument(
+            "robot_description",
+            default_value=None,
+            description="The robot URDF description.",
+        ),
+        DeclareLaunchArgument(
+            "target_description",
+            default_value=None,
+            description="The target URDF description.",
+        ),
     ]
 
     nodes = [
@@ -57,7 +67,23 @@ def generate_launch_description() -> LaunchDescription:
         Node(
             package="ros_gz_sim",
             executable="create",
-            arguments=["-name", "micro-g-bot", "-topic", "robot_description"],
+            arguments=[
+                "-name",
+                "px100",
+                "-string",
+                LaunchConfiguration("robot_description"),
+            ],
+            output="both",
+        ),
+        Node(
+            package="ros_gz_sim",
+            executable="create",
+            arguments=[
+                "-name",
+                "target",
+                "-string",
+                LaunchConfiguration("target_description"),
+            ],
             output="both",
         ),
     ]
