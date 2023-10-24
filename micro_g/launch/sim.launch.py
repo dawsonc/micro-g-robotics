@@ -19,11 +19,15 @@
 # THE SOFTWARE.
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
-from launch_ros.actions import Node
-from launch.actions import IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import (
+    Command,
+    FindExecutable,
+    LaunchConfiguration,
+    PathJoinSubstitution,
+)
+from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 
@@ -38,6 +42,19 @@ def generate_launch_description() -> LaunchDescription:
     """
     args = [
         DeclareLaunchArgument(
+            "prefix",
+            default_value="",
+            description=("The prefix of the model. Expected format '<prefix>/'."),
+        ),
+        DeclareLaunchArgument(
+            "description_package",
+            default_value="micro_g_description",
+            description=(
+                "The project description package. This package should include the"
+                " description files to launch."
+            ),
+        ),
+        DeclareLaunchArgument(
             "gz_world_file",
             default_value="micro_g.world",
             description="The Gazebo world file to launch.",
@@ -48,11 +65,35 @@ def generate_launch_description() -> LaunchDescription:
             description="The robot URDF description.",
         ),
         DeclareLaunchArgument(
-            "target_description",
-            default_value=None,
-            description="The target URDF description.",
+            "robot_model",
+            default_value="px100",
+            description="The name of the robot model to use.",
         ),
     ]
+
+    target_description = Command(
+        [
+            PathJoinSubstitution([FindExecutable(name="xacro")]),
+            " ",
+            PathJoinSubstitution(
+                [
+                    FindPackageShare(LaunchConfiguration("description_package")),
+                    "xacro",
+                    "target",
+                    "config.xacro",
+                ]
+            ),
+            " ",
+            "prefix:=",
+            LaunchConfiguration("prefix"),
+            " ",
+            "use_sim:=",
+            "true",
+            " ",
+            "description_package:=",
+            LaunchConfiguration("description_package"),
+        ]
+    )
 
     nodes = [
         Node(
@@ -69,7 +110,7 @@ def generate_launch_description() -> LaunchDescription:
             executable="create",
             arguments=[
                 "-name",
-                "px100",
+                LaunchConfiguration("robot_model"),
                 "-string",
                 LaunchConfiguration("robot_description"),
             ],
@@ -82,7 +123,7 @@ def generate_launch_description() -> LaunchDescription:
                 "-name",
                 "target",
                 "-string",
-                LaunchConfiguration("target_description"),
+                target_description,
             ],
             output="both",
         ),

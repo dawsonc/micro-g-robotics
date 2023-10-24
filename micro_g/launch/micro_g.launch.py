@@ -19,18 +19,17 @@
 # THE SOFTWARE.
 
 from launch import LaunchDescription
-from launch.conditions import IfCondition
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.conditions import IfCondition, UnlessCondition
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
-    LaunchConfiguration,
-    PathJoinSubstitution,
     Command,
     FindExecutable,
+    LaunchConfiguration,
+    PathJoinSubstitution,
 )
-from launch.actions import IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -57,39 +56,61 @@ def generate_launch_description() -> LaunchDescription:
             "description_package",
             default_value="micro_g_description",
             description=(
-                "The project description package. This package should include the"
+                "The micro-g description package. This package should include the"
                 " description files to launch."
             ),
         ),
-    ]
-
-    use_sim = LaunchConfiguration("use_sim")
-    prefix = LaunchConfiguration("prefix")
-    description_package = LaunchConfiguration("description_package")
-
-    target_description = Command(
-        [
-            PathJoinSubstitution([FindExecutable(name="xacro")]),
-            " ",
-            PathJoinSubstitution(
+        DeclareLaunchArgument(
+            "motors_file",
+            default_value=[
+                PathJoinSubstitution(
+                    [
+                        FindPackageShare("interbotix_xsarm_control"),
+                        "config",
+                        LaunchConfiguration("robot_model"),
+                    ]
+                ),
+                ".yaml",
+            ],
+            description=(
+                "The Interbotix motor configuration file. This should be the"
+                " full path to the file."
+            ),
+        ),
+        DeclareLaunchArgument(
+            "modes_file",
+            default_value=PathJoinSubstitution(
                 [
-                    FindPackageShare(description_package),
-                    "xacro",
-                    "target",
-                    "config.xacro",
+                    FindPackageShare("interbotix_xsarm_control"),
+                    "config",
+                    "modes.yaml",
                 ]
             ),
-            " ",
-            "prefix:=",
-            prefix,
-            " ",
-            "use_sim:=",
-            use_sim,
-            " ",
-            "description_package:=",
-            description_package,
-        ]
-    )
+            description=(
+                "The Interbotix mode configuration file. This should be the"
+                " full path to the file."
+            ),
+        ),
+        DeclareLaunchArgument(
+            "load_configs_from_eeprom",
+            default_value="true",
+            description=(
+                "Whether or not the initial register values (under the 'motors' heading)"
+                " in a motor configuration file should be written to the motors; as the"
+                " values being written are stored in each motor's EEPROM (which means"
+                " the values are retained even after a power cycle), this can be set to"
+                " `false` after the first time using the robot. Setting to `false` also"
+                " shortens the node startup time by a few seconds and preserves the life"
+                " of the EEPROM."
+            ),
+        ),
+        DeclareLaunchArgument(
+            "robot_model",
+            default_value="px100",
+            choices=["px100"],
+            description="The name of the robot model to use.",
+        ),
+    ]
 
     robot_description = Command(
         [
@@ -97,32 +118,73 @@ def generate_launch_description() -> LaunchDescription:
             " ",
             PathJoinSubstitution(
                 [
-                    FindPackageShare(description_package),
+                    FindPackageShare(LaunchConfiguration("description_package")),
                     "xacro",
-                    "px100",
+                    LaunchConfiguration("robot_model"),
                     "config.xacro",
                 ]
             ),
             " ",
             "prefix:=",
-            prefix,
+            LaunchConfiguration("prefix"),
             " ",
             "use_sim:=",
-            use_sim,
+            LaunchConfiguration("use_sim"),
             " ",
             "description_package:=",
-            description_package,
+            LaunchConfiguration("description_package"),
         ]
     )
 
     nodes = [
+        # Robot state publisher
         Node(
             package="robot_state_publisher",
             executable="robot_state_publisher",
+            namespace="micro_g",
             output="both",
             parameters=[
-                {"use_sim_time": use_sim, "robot_description": robot_description}
+                {
+                    "use_sim_time": LaunchConfiguration("use_sim"),
+                    "robot_description": robot_description,
+                }
             ],
+        ),
+        # Interbotix SDK for hardware
+        Node(
+            condition=UnlessCondition(LaunchConfiguration("use_sim")),
+            package="interbotix_xs_sdk",
+            executable="xs_sdk",
+            name="xs_sdk",
+            namespace=LaunchConfiguration("robot_model"),
+            arguments=[],
+            parameters=[
+                {
+                    "motor_configs": LaunchConfiguration("motors_file"),
+                    "mode_configs": LaunchConfiguration("modes_file"),
+                    "load_configs": LaunchConfiguration("load_configs_from_eeprom"),
+                    "robot_description": robot_description,
+                    "use_sim_time": LaunchConfiguration("use_sim"),
+                    "xs_driver_logging_level": "INFO",
+                }
+            ],
+            output="both",
+        ),
+        Node(
+            condition=IfCondition(LaunchConfiguration("use_sim")),
+            package="interbotix_xs_sdk",
+            executable="xs_sdk_sim.py",
+            name="xs_sdk_sim",
+            namespace=LaunchConfiguration("robot_model"),
+            parameters=[
+                {
+                    "motor_configs": LaunchConfiguration("motors_file"),
+                    "mode_configs": LaunchConfiguration("modes_file"),
+                    "robot_description": robot_description,
+                    "use_sim_time": LaunchConfiguration("use_sim"),
+                }
+            ],
+            output="both",
         ),
     ]
 
@@ -140,10 +202,11 @@ def generate_launch_description() -> LaunchDescription:
                 ]
             ),
             launch_arguments={
+                "prefix": LaunchConfiguration("prefix"),
+                "description_package": LaunchConfiguration("description_package"),
                 "robot_description": robot_description,
-                "target_description": target_description,
             }.items(),
-            condition=IfCondition(use_sim),
+            condition=IfCondition(LaunchConfiguration("use_sim")),
         ),
     ]
 

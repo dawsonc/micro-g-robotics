@@ -42,3 +42,4 @@ RUN python3 -m pip install -r requirements-dev.txt \
 ENV PYTHONWARNINGS="ignore"
 
 ENV IGN_GAZEBO_RESOURCE_PATH=$USER_WORKSPACE/install/micro_g_description/share/micro_g_description/gazebo/worlds:$IGN_GAZEBO_RESOURCE_PATH
+ENV IGN_GAZEBO_RESOURCE_PATH=$USER_WORKSPACE/install/micro_g_description/share/micro_g_description/gazebo/models:$IGN_GAZEBO_RESOURCE_PATH

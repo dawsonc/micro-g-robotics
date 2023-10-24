@@ -80,9 +80,10 @@ RUN sudo apt-get -q update \
     && sudo rm -rf /var/lib/apt/lists/*
 RUN /bin/bash $USER_WORKSPACE/src/interbotix_ros_manipulators/interbotix_ros_xsarms/install/amd64/xsarm_amd64_install.sh -d humble -p $USER_WORKSPACE -n
 
-# Setup the ROS environment
-ENV IGN_GAZEBO_RESOURCE_PATH=$USER_WORKSPACE/install/micro_g_description/share/micro_g_description/gazebo:$IGN_GAZEBO_RESOURCE_PATH
+# Setup the Gazebo environment
 ENV IGN_GAZEBO_RESOURCE_PATH=$USER_WORKSPACE/install/interbotix_xsarm_descriptions/share/interbotix_xsarm_descriptions/meshes:$IGN_GAZEBO_RESOURCE_PATH
+ENV IGN_GAZEBO_RESOURCE_PATH=$USER_WORKSPACE/install/micro_g_description/share/micro_g_description/gazebo/worlds:$IGN_GAZEBO_RESOURCE_PATH
+ENV IGN_GAZEBO_RESOURCE_PATH=$USER_WORKSPACE/install/micro_g_description/share/micro_g_description/gazebo/models:$IGN_GAZEBO_RESOURCE_PATH
 
 RUN . "/opt/ros/${ROS_DISTRO}/setup.sh" \
     && colcon build \

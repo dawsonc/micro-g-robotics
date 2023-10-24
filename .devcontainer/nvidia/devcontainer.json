@@ -47,12 +47,12 @@
         "python.autoComplete.extraPaths": [
           "/opt/ros/humble/lib/python3.10/site-packages/",
           "/opt/ros/humble/local/lib/python3.10/dist-packages/",
-          "${workspaceFolder}/install/"
+          "${workspaceFolder}/../../install/"
         ],
         "python.analysis.extraPaths": [
           "/opt/ros/humble/lib/python3.10/site-packages/",
           "/opt/ros/humble/local/lib/python3.10/dist-packages/",
-          "${workspaceFolder}/install/"
+          "${workspaceFolder}/../../install/"
         ],
         "C_Cpp.default.intelliSenseMode": "linux-gcc-x86",
         "C_Cpp.clang_format_fallbackStyle": "Google",
@@ -69,9 +69,10 @@
           "editor.rulers": [90],
           "editor.formatOnSave": true,
           "editor.codeActionsOnSave": {
-            "source.fixAll": true
+            "source.fixAll": true,
+            "source.organizeImports": true
           },
-          "editor.defaultFormatter": "ms-python.black-formatter"
+          "editor.defaultFormatter": "charliermarsh.ruff"
         },
         "[dockerfile]": {
           "editor.quickSuggestions": {

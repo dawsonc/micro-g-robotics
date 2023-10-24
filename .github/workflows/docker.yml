@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - feature-simulation-env
   pull_request:
     paths:
       - .docker/**
