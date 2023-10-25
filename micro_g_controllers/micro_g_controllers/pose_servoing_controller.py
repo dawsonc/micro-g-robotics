@@ -109,7 +109,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self.core)
         # Set the target frame for transformation
-        self.target_frame = f"{robot_name}/base_link"
+        self.target_frame = "base_link"
 
         # Create a subscription to the pose that we will track
         self.core.create_subscription(

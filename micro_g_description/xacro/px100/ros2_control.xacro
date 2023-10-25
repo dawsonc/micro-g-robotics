@@ -7,13 +7,13 @@
 
     <ros2_control name="XSHardwareInterface" type="system">
 
-      <xacro:if value="$(arg use_sim)">
+      <xacro:if value="${use_sim}">
         <hardware>
           <plugin>gz_ros2_control/GazeboSimSystem</plugin>
         </hardware>
       </xacro:if>
 
-      <xacro:unless value="$(arg use_sim)">
+      <xacro:unless value="${use_sim}">
         <hardware>
           <xacro:if value="${use_fake_hardware}">
             <plugin>mock_components/GenericSystem</plugin>

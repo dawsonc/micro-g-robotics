@@ -3,8 +3,8 @@
 
   <!-- Arguments -->
   <xacro:arg name="prefix" default="" />
-  <xacro:arg name="use_sim" default="true" />
-  <xacro:arg name="use_fake_hardware" default="true" />
+  <xacro:arg name="use_sim" default="false" />
+  <xacro:arg name="use_fake_hardware" default="false" />
   <xacro:arg name="description_package" default="micro_g_description" />
 
   <!-- Properties -->
@@ -20,14 +20,14 @@
   <xacro:include filename="$(find ${description_package})/xacro/px100/urdf.xacro" />
   <xacro:include filename="$(find ${description_package})/xacro/px100/ros2_control.xacro" />
 
+  <xacro:px100_urdf prefix="${prefix}" parent="base_footprint" use_sim="${use_sim}">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+  </xacro:px100_urdf>
+
   <xacro:px100_system
     prefix="${prefix}"
     use_sim="${use_sim}"
     use_fake_hardware="${use_fake_hardware}"
   />
-
-  <xacro:px100_urdf prefix="${prefix}" parent="base_footprint" use_sim="${use_sim}">
-    <origin xyz="0 0 0" rpy="0 0 0" />
-  </xacro:px100_urdf>
 
 </robot>

@@ -27,6 +27,7 @@ from launch.substitutions import (
     FindExecutable,
     LaunchConfiguration,
     PathJoinSubstitution,
+    PythonExpression,
 )
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
@@ -43,9 +44,28 @@ def generate_launch_description() -> LaunchDescription:
     """
     args = [
         DeclareLaunchArgument(
+            "robot_model",
+            default_value="px100",
+            choices=["px100"],
+            description="The name of the robot model to use.",
+        ),
+        DeclareLaunchArgument(
             "use_sim",
             default_value="false",
             description="Launch the micro-g simulation environment.",
+        ),
+        DeclareLaunchArgument(
+            "use_rviz",
+            default_value="false",
+            description="Launch the micro-g RViz2 visualization.",
+        ),
+        DeclareLaunchArgument(
+            "use_fake_hardware",
+            default_value="true",
+            description=(
+                "Launch the micro-g system using a mock hardware interface. This"
+                " is set to false automatically when using the simulator."
+            ),
         ),
         DeclareLaunchArgument(
             "prefix",
@@ -72,10 +92,7 @@ def generate_launch_description() -> LaunchDescription:
                 ),
                 ".yaml",
             ],
-            description=(
-                "The Interbotix motor configuration file. This should be the"
-                " full path to the file."
-            ),
+            description="The full path to the Interbotix motor configuration file.",
         ),
         DeclareLaunchArgument(
             "modes_file",
@@ -86,10 +103,7 @@ def generate_launch_description() -> LaunchDescription:
                     "modes.yaml",
                 ]
             ),
-            description=(
-                "The Interbotix mode configuration file. This should be the"
-                " full path to the file."
-            ),
+            description="The full path to the Interbotix mode configuration file.",
         ),
         DeclareLaunchArgument(
             "load_configs_from_eeprom",
@@ -105,10 +119,18 @@ def generate_launch_description() -> LaunchDescription:
             ),
         ),
         DeclareLaunchArgument(
-            "robot_model",
-            default_value="px100",
-            choices=["px100"],
-            description="The name of the robot model to use.",
+            "rviz_config",
+            default_value=[
+                PathJoinSubstitution(
+                    [
+                        FindPackageShare("micro_g_description"),
+                        "rviz",
+                        LaunchConfiguration("robot_model"),
+                    ]
+                ),
+                ".rviz",
+            ],
+            description="The full path to the RViz2 configuration file.",
         ),
     ]
 
@@ -133,6 +155,9 @@ def generate_launch_description() -> LaunchDescription:
             " ",
             "description_package:=",
             LaunchConfiguration("description_package"),
+            " ",
+            "use_fake_hardware:=",
+            LaunchConfiguration("use_fake_hardware"),
         ]
     )
 
@@ -141,7 +166,7 @@ def generate_launch_description() -> LaunchDescription:
         Node(
             package="robot_state_publisher",
             executable="robot_state_publisher",
-            namespace="micro_g",
+            namespace=LaunchConfiguration("robot_model"),
             output="both",
             parameters=[
                 {
@@ -152,7 +177,6 @@ def generate_launch_description() -> LaunchDescription:
         ),
         # Interbotix SDK for hardware
         Node(
-            condition=UnlessCondition(LaunchConfiguration("use_sim")),
             package="interbotix_xs_sdk",
             executable="xs_sdk",
             name="xs_sdk",
@@ -168,10 +192,21 @@ def generate_launch_description() -> LaunchDescription:
                     "xs_driver_logging_level": "INFO",
                 }
             ],
+            condition=UnlessCondition(
+                PythonExpression(
+                    [
+                        "'",
+                        LaunchConfiguration("use_sim"),
+                        "' == 'true' or '",
+                        LaunchConfiguration("use_fake_hardware"),
+                        "' == 'true'",
+                    ]
+                )
+            ),
             output="both",
         ),
+        # Interbotix SDK for simulation
         Node(
-            condition=IfCondition(LaunchConfiguration("use_sim")),
             package="interbotix_xs_sdk",
             executable="xs_sdk_sim.py",
             name="xs_sdk_sim",
@@ -184,7 +219,27 @@ def generate_launch_description() -> LaunchDescription:
                     "use_sim_time": LaunchConfiguration("use_sim"),
                 }
             ],
+            condition=IfCondition(
+                PythonExpression(
+                    [
+                        "'",
+                        LaunchConfiguration("use_sim"),
+                        "' == 'true' or '",
+                        LaunchConfiguration("use_fake_hardware"),
+                        "' == 'true'",
+                    ]
+                )
+            ),
             output="both",
+        ),
+        # RViz2
+        Node(
+            package="rviz2",
+            executable="rviz2",
+            name="rviz2",
+            arguments=["-d", LaunchConfiguration("rviz_config")],
+            parameters=[{"use_sim_time": LaunchConfiguration("use_sim")}],
+            condition=IfCondition(LaunchConfiguration("use_rviz")),
         ),
     ]
 
@@ -205,6 +260,7 @@ def generate_launch_description() -> LaunchDescription:
                 "prefix": LaunchConfiguration("prefix"),
                 "description_package": LaunchConfiguration("description_package"),
                 "robot_description": robot_description,
+                "robot_model": LaunchConfiguration("robot_model"),
             }.items(),
             condition=IfCondition(LaunchConfiguration("use_sim")),
         ),

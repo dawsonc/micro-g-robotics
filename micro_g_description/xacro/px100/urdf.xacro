@@ -16,7 +16,7 @@
         <origin rpy="0 0 ${pi/2}" xyz="0 0 0" />
         <geometry>
           <mesh
-            filename="$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/base.stl"
+            filename="file://$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/base.stl"
             scale="0.001 0.001 0.001"
           />
         </geometry>
@@ -26,7 +26,7 @@
         <origin rpy="0 0 ${pi/2}" xyz="0 0 0" />
         <geometry>
           <mesh
-            filename="$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/base.stl"
+            filename="file://$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/base.stl"
             scale="0.001 0.001 0.001"
           />
         </geometry>
@@ -50,7 +50,7 @@
         <origin rpy="0 0 ${pi/2}" xyz="0 0 -0.0022" />
         <geometry>
           <mesh
-            filename="$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/shoulder.stl"
+            filename="file://$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/shoulder.stl"
             scale="0.001 0.001 0.001" />
         </geometry>
         <material name="interbotix_black" />
@@ -59,7 +59,7 @@
         <origin rpy="0 0 ${pi/2}" xyz="0 0 -0.0022" />
         <geometry>
           <mesh
-            filename="$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/shoulder.stl"
+            filename="file://$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/shoulder.stl"
             scale="0.001 0.001 0.001"
           />
         </geometry>
@@ -83,7 +83,7 @@
         <origin rpy="0 0 ${pi/2}" xyz="0 0 0" />
         <geometry>
           <mesh
-            filename="$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/upper_arm.stl"
+            filename="file://$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/upper_arm.stl"
             scale="0.001 0.001 0.001"
           />
         </geometry>
@@ -93,7 +93,7 @@
         <origin rpy="0 0 ${pi/2}" xyz="0 0 0" />
         <geometry>
           <mesh
-            filename="$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/upper_arm.stl"
+            filename="file://$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/upper_arm.stl"
             scale="0.001 0.001 0.001"
           />
         </geometry>
@@ -117,7 +117,7 @@
         <origin rpy="0 0 ${pi/2}" xyz="0 0 0" />
         <geometry>
           <mesh
-            filename="$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/forearm.stl"
+            filename="file://$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/forearm.stl"
             scale="0.001 0.001 0.001"
           />
         </geometry>
@@ -127,7 +127,7 @@
         <origin rpy="0 0 ${pi/2}" xyz="0 0 0" />
         <geometry>
           <mesh
-            filename="$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/forearm.stl"
+            filename="file://$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/forearm.stl"
             scale="0.001 0.001 0.001"
           />
         </geometry>
@@ -151,7 +151,7 @@
         <origin rpy="0 0 ${pi/2}" xyz="0 0 0" />
         <geometry>
           <mesh
-            filename="$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/gripper.stl"
+            filename="file://$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/gripper.stl"
             scale="0.001 0.001 0.001"
           />
         </geometry>
@@ -161,7 +161,7 @@
         <origin rpy="0 0 ${pi/2}" xyz="0 0 0" />
         <geometry>
           <mesh
-            filename="$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/gripper.stl"
+            filename="file://$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/gripper.stl"
             scale="0.001 0.001 0.001"
           />
         </geometry>
@@ -198,7 +198,7 @@
         <origin rpy="0 0 ${pi/2}" xyz="-0.0685 0 0" />
         <geometry>
           <mesh
-            filename="$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/gripper_prop.stl"
+            filename="file://$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/gripper_prop.stl"
             scale="0.001 0.001 0.001" />
         </geometry>
         <material name="interbotix_black" />
@@ -207,7 +207,7 @@
         <origin rpy="0 0 ${pi/2}" xyz="-0.0685 0 0" />
         <geometry>
           <mesh
-            filename="$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/gripper_prop.stl"
+            filename="file://$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/gripper_prop.stl"
             scale="0.001 0.001 0.001"
           />
         </geometry>
@@ -231,7 +231,7 @@
         <origin rpy="0 0 ${pi/2}" xyz="-0.063 0 0" />
         <geometry>
           <mesh
-            filename="$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/gripper_bar.stl"
+            filename="file://$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/gripper_bar.stl"
             scale="0.001 0.001 0.001"
           />
         </geometry>
@@ -241,7 +241,7 @@
         <origin rpy="0 0 ${pi/2}" xyz="-0.063 0 0" />
         <geometry>
           <mesh
-            filename="$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/gripper_bar.stl"
+            filename="file://$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/gripper_bar.stl"
             scale="0.001 0.001 0.001"
           />
         </geometry>
@@ -279,7 +279,7 @@
         <origin rpy="${pi} ${pi} 0" xyz="0 0.005 0" />
         <geometry>
           <mesh
-            filename="$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/gripper_finger.stl"
+            filename="file://$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/gripper_finger.stl"
             scale="0.001 0.001 0.001" />
         </geometry>
         <material name="interbotix_black" />
@@ -288,7 +288,7 @@
         <origin rpy="${pi} ${pi} 0" xyz="0 0.005 0" />
         <geometry>
           <mesh
-            filename="$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/gripper_finger.stl"
+            filename="file://$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/gripper_finger.stl"
             scale="0.001 0.001 0.001"
           />
         </geometry>
@@ -312,7 +312,7 @@
         <origin rpy="0 ${pi} 0" xyz="0 -0.005 0" />
         <geometry>
           <mesh
-            filename="$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/gripper_finger.stl"
+            filename="file://$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/gripper_finger.stl"
             scale="0.001 0.001 0.001"
           />
         </geometry>
@@ -322,7 +322,7 @@
         <origin rpy="0 ${pi} 0" xyz="0 -0.005 0" />
         <geometry>
           <mesh
-            filename="$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/gripper_finger.stl"
+            filename="file://$(find interbotix_xsarm_descriptions)/meshes/px100_meshes/gripper_finger.stl"
             scale="0.001 0.001 0.001"
           />
         </geometry>
