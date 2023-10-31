@@ -42,11 +42,24 @@ def generate_launch_description() -> LaunchDescription:
             default_value="false",
             description="Launch the micro-g simulation environment.",
         ),
+        DeclareLaunchArgument(
+            "robot_model",
+            default_value="px100",
+            description="Robot model argument",
+        ),
+        DeclareLaunchArgument(
+            "robot_name",
+            default_value="px100",
+            description="Robot name argument",
+        ),
     ]
 
     use_sim = LaunchConfiguration("use_sim")
+    robot_model = LaunchConfiguration("robot_model")
+    robot_name = LaunchConfiguration("robot_name")
 
     includes = [
+        # Sim environment (if needed)
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 [
@@ -60,6 +73,42 @@ def generate_launch_description() -> LaunchDescription:
                 ]
             ),
             condition=IfCondition(use_sim),
+        ),
+        # Hardware interfaces
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                [
+                    PathJoinSubstitution(
+                        [
+                            FindPackageShare("micro_g"),
+                            "launch",
+                            "hw_interfaces.launch.py",
+                        ]
+                    )
+                ]
+            ),
+            launch_arguments={
+                "robot_model": robot_model,
+                "use_sim": use_sim,
+            }.items(),
+        ),
+        # Controllers
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                [
+                    PathJoinSubstitution(
+                        [
+                            FindPackageShare("micro_g"),
+                            "launch",
+                            "controllers.launch.py",
+                        ]
+                    )
+                ]
+            ),
+            launch_arguments={
+                "robot_model": robot_model,
+                "robot_name": robot_name,
+            }.items(),
         ),
     ]
 
