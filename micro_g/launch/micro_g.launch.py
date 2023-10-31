@@ -98,7 +98,7 @@ def generate_launch_description() -> LaunchDescription:
                 [
                     PathJoinSubstitution(
                         [
-                            FindPackageShare("micro_g"),
+                            FindPackageShare("micro_g_controllers"),
                             "launch",
                             "controllers.launch.py",
                         ]

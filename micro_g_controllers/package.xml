@@ -15,6 +15,9 @@
   <author>Evan Palmer</author>
   <author>Charles Dawson</author>
 
+  <depend>launch</depend>
+  <depend>launch_ros</depend>
+
   <depend>interbotix_xs_msgs</depend>
   <depend>interbotix_xs_modules</depend>
   <depend>interbotix_xsarm_control</depend>
