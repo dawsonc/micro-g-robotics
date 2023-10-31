@@ -80,14 +80,22 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         moving_time_desc = ParameterDescriptor(
             type=ParameterType.PARAMETER_DOUBLE, description="Moving time in seconds"
         )
+        replanning_attempts_desc = ParameterDescriptor(
+            type=ParameterType.PARAMETER_INTEGER,
+            description="Number of times to attempt re-planning",
+        )
         self.core.declare_parameter(
             "control_update_rate", 20.0, descriptor=control_rate_desc
         )
-        self.core.declare_parameter("moving_time", 0.2, descriptor=moving_time_desc)
+        self.core.declare_parameter("moving_time", 0.5, descriptor=moving_time_desc)
+        self.core.declare_parameter(
+            "replanning_attempts", 5, descriptor=replanning_attempts_desc
+        )
 
         # Get ROS parameters
         control_update_rate = self.core.get_parameter("control_update_rate").value
         moving_time = self.core.get_parameter("moving_time").value
+        self.replanning_attempts = self.core.get_parameter("replanning_attempts").value
 
         # Update the moving time (and set acceleration time to half of moving time)
         self.arm.set_trajectory_time(moving_time, moving_time / 2.0)
@@ -185,14 +193,27 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         rpy_yd = np.array(ang.rotation_matrix_to_euler_angles(T_yd[:3, :3]))
         rpy_offset = rpy_yd - rpy_yb
 
-        success = self.arm.set_ee_cartesian_trajectory(
-            x=position_offset[0],
-            y=0.0,
-            z=position_offset[2],
-            roll=rpy_offset[0],
-            pitch=rpy_offset[1],
-            yaw=0.0,
-        )
+        # Plan and execute. If planning fails (due to the pose not being reachable),
+        # re-plan with a nearer goal until we succeed or a maximum number of planning
+        # attempts are made.
+        success = False
+        attempts = 0
+        while not success and attempts < self.replanning_attempts:
+            attempts += 1
+            success = self.arm.set_ee_cartesian_trajectory(
+                x=position_offset[0],
+                y=0.0,
+                z=position_offset[2],
+                roll=rpy_offset[0],
+                pitch=rpy_offset[1],
+                yaw=0.0,
+            )
+
+            # Adjust goal to be nearer if we need to replan
+            if not success:
+                position_offset *= 0.5
+                rpy_offset *= 0.5
+                self.core.get_logger().info("Plan not found; replanning!")
 
         if not success:
             self.core.get_logger().warn(f"Desired pose not reachable!\n{self.T_sd}")
