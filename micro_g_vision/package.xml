@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>micro_g_vision</name>
+  <version>0.0.1</version>
+  <description>Vision system for micro-g</description>
+
+  <maintainer email="evanp922@gmail.com">Evan Palmer</maintainer>
+  <maintainer email="charles.dwsn@gmail.com">Charles Dawson</maintainer>
+  <license>MIT</license>
+
+  <url type="repository">https://github.com/dawsonc/micro-g-robotics.git</url>
+  <url type="bugtracker">https://github.com/dawsonc/micro-g-robotics/issues</url>
+
+  <author>Evan Palmer</author>
+  <author>Charles Dawson</author>
+
+  <depend>launch</depend>
+  <depend>launch_ros</depend>
+
+  <depend>python-transforms3d-pip</depend>
+  <depend>rclpy</depend>
+
+  <exec_depend>realsense2_camera</exec_depend>
+  <exec_depend>apriltag_ros</exec_depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
