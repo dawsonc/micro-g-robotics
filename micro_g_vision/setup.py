@@ -16,6 +16,11 @@ setup(
             os.path.join("share", package_name, "launch"),
             glob(os.path.join("launch", "*launch.[pxy][yma]*")),
         ),
+        # Include all config files.
+        (
+            os.path.join("share", package_name, "config"),
+            glob(os.path.join("config", "*.yml")),
+        ),
     ],
     install_requires=["setuptools"],
     zip_safe=True,

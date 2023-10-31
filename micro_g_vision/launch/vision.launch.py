@@ -40,6 +40,12 @@ def generate_launch_description():
                 package="realsense2_camera",
                 executable="realsense2_camera_node",
                 name="realsense2_camera_node",
+                output="log",
+                parameters=[
+                    {
+                        "rgb_camera.profile": "1280x720x30"
+                    }.items()
+                ]
             ),
             # Launch elements for the AprilTag detector
             Node(
@@ -56,10 +62,17 @@ def generate_launch_description():
                         [
                             FindPackageShare("micro_g_vision"),
                             "config",
-                            "apriltag.yaml",
+                            "apriltag.yml",
                         ]
                     )
                 ],
+            ),
+            # Launch the object tracker
+            Node(
+                package="micro_g_vision",
+                executable="object_tracker",
+                name="object_tracker",
+                output="screen",
             ),
         ]
     )
