@@ -20,12 +20,14 @@
 import numpy as np
 import rclpy
 from rclpy.node import Node
-from apriltag_msgs.msg import AprilTagDetectionArray, AprilTagDetection
+from apriltag_msgs.msg import AprilTagDetectionArray
 from rclpy.qos import qos_profile_system_default
 from tf2_ros import TransformListener, Buffer
+from rcl_interfaces.msg import ParameterDescriptor, ParameterType
 from tf2_geometry_msgs import do_transform_pose
 from geometry_msgs.msg import PoseStamped
 import transforms3d
+from transforms3d._gohlketransforms import quaternion_slerp
 
 
 class ObjectTrackerNode(Node):
@@ -41,6 +43,18 @@ class ObjectTrackerNode(Node):
         """
         super().__init__("object_tracker")
         self.tag_attachments = tag_attachments
+
+        # Initialize the moving average filter
+        mwa_decay_desc = ParameterDescriptor(
+            type=ParameterType.PARAMETER_FLOAT,
+            description="Decay rate of moving average filter",
+        )
+        self.declare_parameter(
+            "mwa_decay", 0.9, descriptor=mwa_decay_desc
+        )
+        self.mwa_decay = self.get_parameter("mwa_decay").value
+        self.mwa_position = np.zeros((3,))
+        self.mwa_orientation = np.array([1.0, 0.0, 0.0, 0.0])  # w x y z
 
         # Create the ROS plumbing: a publisher for the object position, a
         # subscription to the AprilTag detections, and a TF buffer and listener.
@@ -117,6 +131,43 @@ class ObjectTrackerNode(Node):
         pose_camera_object.header.frame_id = "camera_link"
         pose_camera_object.header.stamp = self.get_clock().now().to_msg()
         pose_camera_object.pose = do_transform_pose(pose_tag_object.pose, transform)
+
+        # Update the moving average filter
+        new_position = np.array(
+            [
+                pose_camera_object.pose.position.x,
+                pose_camera_object.pose.position.y,
+                pose_camera_object.pose.position.z,
+            ]
+        )
+        self.mwa_position = (
+            self.mwa_decay * self.mwa_position + (1 - self.mwa_decay) * new_position
+        )
+        new_orientation = np.array(
+            [
+                pose_camera_object.pose.orientation.w,
+                pose_camera_object.pose.orientation.x,
+                pose_camera_object.pose.orientation.y,
+                pose_camera_object.pose.orientation.z,
+            ]
+        )
+        self.mwa_orientation = quaternion_slerp(
+            self.mwa_orientation, new_orientation, 1 - self.mwa_decay
+        )
+
+        # Update the pose message with the filtered position and orientation
+        (
+            pose_camera_object.pose.position.x,
+            pose_camera_object.pose.position.y,
+            pose_camera_object.pose.position.z,
+        ) = self.mwa_position
+        (
+            pose_camera_object.pose.orientation.w,
+            pose_camera_object.pose.orientation.x,
+            pose_camera_object.pose.orientation.y,
+            pose_camera_object.pose.orientation.z,
+        ) = self.mwa_orientation
+
 
         # Publish the object pose
         self.publisher.publish(pose_camera_object)
