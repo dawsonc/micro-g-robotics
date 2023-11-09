@@ -1,13 +1,4 @@
-Checks: >
-  -*,
-  abseil-*,
-  bugprone-*,
-  google-*,
-  misc-*,
-  modernize-*,
-  performance-*,
-  portability-*,
-  readability-*,
+Checks: >.
   -google-readability-braces-around-statements,
   -google-readability-namespace-comments,
   -google-runtime-references,
