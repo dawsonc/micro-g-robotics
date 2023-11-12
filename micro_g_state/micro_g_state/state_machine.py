@@ -1,56 +1,46 @@
 import rclpy
 from rclpy.node import Node
 from statemachine import StateMachine, State
+from std_msgs.msg import Empty
 
 
-class GraspingFSM(StateMachine):
+class FSM(StateMachine):
     disabled = State(initial=True)
     stowed = State()
     grasping = State()
 
     enable = disabled.to(stowed)
-    disable = stowed.to(disabled) | grasping.to(disabled)
     grasp = stowed.to(grasping)
     reset = grasping.to(stowed)
-
-    def __init__(self, node: Node):
-        self.node = node
+    shutdown = stowed.to(disabled) | grasping.to(disabled)
 
     def before_enable(self):
-        # TODO(evan): enable motors and move to initial position
-        ...
-
-    def before_disable(self):
-        # TODO(evan): disable motors
+        # TODO(evan): start the motors, move to home position
         ...
 
     def before_grasp(self):
-        # TODO(evan): trigger the grasping pipeline
+        # TODO(evan): start logging, arm controller, run action
         ...
 
     def before_reset(self):
-        # TODO(evan): reset joint position
+        # TODO(evan): stop logging, disarm controller, reset props, move to home position
+        ...
+
+    def before_shutdown(self):
+        # TODO(evan): disarm motors
         ...
 
 
-class ExperimentFSM(StateMachine):
-    waiting = State(initial=True)
-    running = State()
+class FSMNode(Node):
+    def __init__(self):
+        super().__init__("state-machine")
 
-    start_experiment = waiting.to(running)
-    reset_experiment = running.to(waiting)
+        self.sm = FSM()
 
-    def __init__(self, node: Node):
-        super().__init__()
-        self.node = node
-
-    def before_start_experiment(self):
-        # TODO(evan): start bag file recording
-        ...
-
-    def before_reset_experiment(self):
-        # TODO(evan): stop bag file recording
-        ...
+        self.create_subscription(Empty, "~/enable", lambda msg: self.sm.enable)
+        self.create_subscription(Empty, "~/shutdown", lambda msg: self.sm.shutdown)
+        self.create_subscription(Empty, "~/grasp", lambda msg: self.sm.grasp)
+        self.create_subscription(Empty, "~/reset", lambda msg: self.sm.reset)
 
 
 def main(args: list[str] | None = None):
