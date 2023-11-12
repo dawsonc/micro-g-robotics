@@ -37,6 +37,11 @@ COPY --chown=$USER_UID:$USER_GID requirements-dev.txt .
 RUN python3 -m pip install -r requirements-dev.txt \
     && rm -rf requirements-dev.txt
 
+# TODO(evan): delete this
+# Install required Python packages not available through rosdep
+RUN python3 -m pip install -r src/micro-g-robotics/requirements-build.txt \
+    && rm -rf requirements-build.txt
+
 # Disable the setuputils installation warning
 # This prevents us from needing to pin the setuputils version (which doesn't always work)
 ENV PYTHONWARNINGS="ignore"

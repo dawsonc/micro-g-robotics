@@ -1,0 +1,3 @@
+# Requirements needed for project build but not available as rosdeps
+python-statemachine
+keyboard

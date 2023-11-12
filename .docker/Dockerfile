@@ -70,6 +70,10 @@ RUN sudo apt-get -q update \
     && sudo apt-get clean -y \
     && sudo rm -rf /var/lib/apt/lists/*
 
+# Install required Python packages not available through rosdep
+RUN python3 -m pip install -r src/micro-g-robotics/requirements-build.txt \
+    && rm -rf requirements-build.txt
+
 # Install interbotix interfaces (requires udev)
 RUN sudo apt-get -q update \
     && sudo apt-get -q -y upgrade \
