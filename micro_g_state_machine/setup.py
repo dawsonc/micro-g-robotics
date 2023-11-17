@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = "micro_g_state"
+package_name = "micro_g_state_machine"
 
 setup(
     name=package_name,
@@ -12,12 +12,12 @@ setup(
     ],
     install_requires=["setuptools"],
     zip_safe=True,
-    maintainer="buzz",
+    maintainer="Evan Palmer",
     maintainer_email="evanp922@gmail.com",
     description="State machine for micro-g",
     license="MIT",
     tests_require=["pytest"],
     entry_points={
-        "console_scripts": [],
+        "console_scripts": ["state_machine = micro_g_state_machine.state_machine:main"],
     },
 )
