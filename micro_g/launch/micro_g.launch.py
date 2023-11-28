@@ -19,11 +19,10 @@
 # THE SOFTWARE.
 
 from launch import LaunchDescription
-from launch.conditions import IfCondition
-from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
-from launch.actions import IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 
 
@@ -109,6 +108,24 @@ def generate_launch_description() -> LaunchDescription:
                 "robot_model": robot_model,
                 "robot_name": robot_name,
             }.items(),
+        ),
+        # Vision
+        # TODO: currently this only runs the vision system when not in simulation. Can
+        # we run it in simulation using a Gazebo camera? Currently blocked by lack of
+        # Gazebo/Interbotix integration.
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                [
+                    PathJoinSubstitution(
+                        [
+                            FindPackageShare("micro_g_vision"),
+                            "launch",
+                            "vision.launch.py",
+                        ]
+                    )
+                ]
+            ),
+            condition=UnlessCondition(LaunchConfiguration("use_sim")),
         ),
     ]
 

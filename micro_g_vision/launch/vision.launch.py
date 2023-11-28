@@ -18,8 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-from launch.substitutions import PathJoinSubstitution
 from launch import LaunchDescription
+from launch.substitutions import PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
@@ -42,10 +42,14 @@ def generate_launch_description():
                 name="realsense2_camera_node",
                 output="log",
                 parameters=[
-                    {
-                        "rgb_camera.profile": "1280x720x30"
-                    }.items()
-                ]
+                    PathJoinSubstitution(
+                        [
+                            FindPackageShare("micro_g_vision"),
+                            "config",
+                            "realsense.yml",
+                        ]
+                    )
+                ],
             ),
             # Launch elements for the AprilTag detector
             Node(
@@ -73,6 +77,50 @@ def generate_launch_description():
                 executable="object_tracker",
                 name="object_tracker",
                 output="screen",
+            ),
+            # Launch the static transform from the robot gantry apriltag to the robot base
+            # There doesn't seem to be a good way to put this in a config.
+            Node(
+                package="tf2_ros",
+                executable="static_transform_publisher",
+                # arguments=[
+                #     "--x",
+                #     "0.0",
+                #     "--y",
+                #     "0.108675",
+                #     "--z",
+                #     "0.0",
+                #     "--qx",
+                #     "0.7071",
+                #     "--qy",
+                #     "0.7071",
+                #     "--qz",
+                #     "0.0",
+                #     "--qw",
+                #     "3.1416",
+                #     "--frame-id",
+                #     "gantry_tag",
+                #     "--child-frame-id",
+                #     "world",
+                # ],
+                arguments=[
+                    "--x",
+                    "0.0",
+                    "--y",
+                    "0.108675",
+                    "--z",
+                    "0.0",
+                    "--yaw",
+                    "-1.5708",
+                    "--pitch",
+                    "0.0",
+                    "--roll",
+                    "0.0",
+                    "--frame-id",
+                    "gantry_tag",
+                    "--child-frame-id",
+                    "world",
+                ],
             ),
         ]
     )

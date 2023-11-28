@@ -19,14 +19,14 @@
 # THE SOFTWARE.
 import numpy as np
 import rclpy
-from rclpy.node import Node
-from apriltag_msgs.msg import AprilTagDetectionArray
-from rclpy.qos import qos_profile_system_default
-from tf2_ros import TransformListener, Buffer
-from rcl_interfaces.msg import ParameterDescriptor, ParameterType
-from tf2_geometry_msgs import do_transform_pose
-from geometry_msgs.msg import PoseStamped
 import transforms3d
+from apriltag_msgs.msg import AprilTagDetectionArray
+from geometry_msgs.msg import PoseStamped
+from rcl_interfaces.msg import ParameterDescriptor, ParameterType
+from rclpy.node import Node
+from rclpy.qos import qos_profile_system_default
+from tf2_geometry_msgs import do_transform_pose
+from tf2_ros import Buffer, TransformListener
 from transforms3d._gohlketransforms import quaternion_slerp
 
 
@@ -46,12 +46,10 @@ class ObjectTrackerNode(Node):
 
         # Initialize the moving average filter
         mwa_decay_desc = ParameterDescriptor(
-            type=ParameterType.PARAMETER_FLOAT,
+            type=ParameterType.PARAMETER_DOUBLE,
             description="Decay rate of moving average filter",
         )
-        self.declare_parameter(
-            "mwa_decay", 0.9, descriptor=mwa_decay_desc
-        )
+        self.declare_parameter("mwa_decay", 0.9, descriptor=mwa_decay_desc)
         self.mwa_decay = self.get_parameter("mwa_decay").value
         self.mwa_position = np.zeros((3,))
         self.mwa_orientation = np.array([1.0, 0.0, 0.0, 0.0])  # w x y z
@@ -168,7 +166,6 @@ class ObjectTrackerNode(Node):
             pose_camera_object.pose.orientation.z,
         ) = self.mwa_orientation
 
-
         # Publish the object pose
         self.publisher.publish(pose_camera_object)
 
@@ -180,7 +177,10 @@ def main(args=None):
             0: (np.array([0.0, 0.0, -(0.025) / 2]), np.array([0.0, 0.0, 0.0])),
             1: (np.array([0.0, 0.0, -(0.025) / 2]), np.array([-np.pi / 2, 0.0, 0.0])),
             2: (np.array([0.0, 0.0, -(0.025) / 2]), np.array([-np.pi, 0.0, 0.0])),
-            3: (np.array([0.0, 0.0, -(0.025) / 2]), np.array([-np.pi * 3 / 2, 0.0, 0.0])),
+            3: (
+                np.array([0.0, 0.0, -(0.025) / 2]),
+                np.array([-np.pi * 3 / 2, 0.0, 0.0]),
+            ),
             4: (np.array([0.0, 0.0, -(0.025) / 2]), np.array([0.0, -np.pi / 2, 0.0])),
             5: (np.array([0.0, 0.0, -(0.025) / 2]), np.array([0.0, np.pi / 2, 0.0])),
         }
