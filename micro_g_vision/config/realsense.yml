@@ -1,4 +1,4 @@
 realsense2_camera_node:                 # node name
   ros__parameters:
     rgb_camera:
-      profile: 1280x720x30
+      profile: 1280x960x15

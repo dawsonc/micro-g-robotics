@@ -1,0 +1,8 @@
+grasp_selector_node:                  # node name
+  ros__parameters:
+    target_frame: world              # frame in which the grasp poses are published
+    input_topic: object_pose          # topic name for the pose of the object to grasp
+    output_topic: px100/desired_eef_pose    # topic name for the grasp pose
+    x_offset: -0.01                     # offset in x direction in target_frame
+    y_offset: 0.0                     # offset in y direction in target_frame
+    z_offset: 0.0                     # offset in z direction in target_frame

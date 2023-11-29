@@ -127,6 +127,20 @@ def generate_launch_description() -> LaunchDescription:
             ),
             condition=UnlessCondition(LaunchConfiguration("use_sim")),
         ),
+        # Grasp selector
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                [
+                    PathJoinSubstitution(
+                        [
+                            FindPackageShare("micro_g_controllers"),
+                            "launch",
+                            "grasp_selector.launch.py",
+                        ]
+                    )
+                ]
+            ),
+        ),
     ]
 
     return LaunchDescription(args + includes)

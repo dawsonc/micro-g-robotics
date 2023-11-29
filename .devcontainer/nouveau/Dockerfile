@@ -34,6 +34,10 @@ RUN sudo apt-get -q update \
     && sudo apt-get clean -y \
     && sudo rm -rf /var/lib/apt/lists/*
 
+WORKDIR $USER_WORKSPACE
+RUN . "/opt/ros/${ROS_DISTRO}/setup.sh" \
+    && colcon build --packages-select apriltag_ros
+
 # Install debugging/linting Python packages
 COPY --chown=$USER_UID:$USER_GID requirements-dev.txt .
 RUN python3 -m pip install -r requirements-dev.txt \

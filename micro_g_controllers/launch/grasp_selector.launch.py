@@ -18,40 +18,37 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-from launch.substitutions import LaunchConfiguration
 from launch import LaunchDescription
+from launch.substitutions import PathJoinSubstitution
 from launch_ros.actions import Node
-from launch.actions import DeclareLaunchArgument
+from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
     """
-    Generate a launch description to run the controllers for the micro-g system.
+    Generate a launch description to run the grasp selector for the micro-g system.
 
     Returns
     -------
-        The launch description for the micro-g controllers.
+        The launch description for the micro-g grasp selector.
 
     """
     return LaunchDescription(
         [
-            # Launch elements for the arm controller
-            DeclareLaunchArgument(
-                "robot_model", default_value="px100", description="Robot model"
-            ),
-            DeclareLaunchArgument(
-                "robot_name", default_value="px100", description="Robot name"
-            ),
+            # Launch elements for the grasp selector
             Node(
                 package="micro_g_controllers",
-                executable="pose_servoing_controller",
-                name="pose_servoing_controller_node",
-                output="log",
-                arguments=[
-                    "--robot_model",
-                    LaunchConfiguration("robot_model"),
-                    "--robot_name",
-                    LaunchConfiguration("robot_name"),
+                executable="grasp_selector",
+                name="grasp_selector_node",
+                output="screen",
+                parameters=[
+                    PathJoinSubstitution(
+                        [
+                            FindPackageShare("micro_g_controllers"),
+                            "config",
+                            "grasp_selector.yml",
+                        ]
+                    )
                 ],
             ),
         ]

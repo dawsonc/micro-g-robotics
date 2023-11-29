@@ -42,7 +42,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         robot_model: str,
         robot_name: str,
         control_update_rate: float = 20.0,
-        moving_time: float = 0.5,
+        moving_time: float = 0.25,
         xs_args=None,
     ):
         """
@@ -66,7 +66,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         super().__init__(
             robot_model=robot_model,
             robot_name=robot_name,
-            start_on_init=True,
+            start_on_init=False,
             moving_time=moving_time,
             accel_time=moving_time / 2.0,
             args=xs_args,
@@ -97,11 +97,12 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         moving_time = self.core.get_parameter("moving_time").value
         self.replanning_attempts = self.core.get_parameter("replanning_attempts").value
 
+        # Set the controller update rate
+        self.control_update_rate = control_update_rate
+        self.rate = self.core.create_rate(self.control_update_rate)
+
         # Update the moving time (and set acceleration time to half of moving time)
         self.arm.set_trajectory_time(moving_time, moving_time / 2.0)
-
-        # Set the controller update rate
-        self.rate = self.core.create_rate(control_update_rate)
 
         # Define the transforms we'll use. Notation is T_{to}{from}.
         # Frames are:
@@ -168,7 +169,9 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
             # Save the position and orientation into the homogeneous transform
             self.T_sd[:3, :3] = orientation
             self.T_sd[:3, 3] = position
-            self.core.get_logger().info(f"Received new desired pose T_sd:\n{self.T_sd}")
+            self.core.get_logger().debug(
+                f"Received new desired pose T_sd:\n{self.T_sd}"
+            )
 
         except Exception as e:
             self.core.get_logger().error(
@@ -178,6 +181,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
 
     def update(self):
         """Run the controller and send commands to the robot."""
+        self.core.get_logger().info("Updating pose servoing controller.")
         # Convert the desired pose into the arm-aligned base frame
         T_ys = np.linalg.inv(self.T_sy)
         T_yd = np.dot(T_ys, self.T_sd)
@@ -214,6 +218,8 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
                 position_offset *= 0.5
                 rpy_offset *= 0.5
                 self.core.get_logger().info("Plan not found; replanning!")
+            else:
+                self.core.get_logger().info("Plan found! Executing!")
 
         if not success:
             self.core.get_logger().warn(f"Desired pose not reachable!\n{self.T_sd}")
@@ -222,6 +228,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         """Run the controller until ROS triggers a shutdown."""
         try:
             self.start()
+            time.sleep(1.0)  # wait a bit for the robot thread to start
             while rclpy.ok():
                 self.update()
                 self.rate.sleep()

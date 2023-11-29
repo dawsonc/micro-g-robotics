@@ -1,6 +1,7 @@
-from setuptools import find_packages, setup
 import os
 from glob import glob
+
+from setuptools import find_packages, setup
 
 package_name = "micro_g_controllers"
 
@@ -16,6 +17,11 @@ setup(
             os.path.join("share", package_name, "launch"),
             glob(os.path.join("launch", "*launch.[pxy][yma]*")),
         ),
+        # Include all config files.
+        (
+            os.path.join("share", package_name, "config"),
+            glob(os.path.join("config", "*.yml")),
+        ),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
@@ -26,7 +32,8 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "pose_servoing_controller=micro_g_controllers.pose_servoing_controller:main"
+            "pose_servoing_controller=micro_g_controllers.pose_servoing_controller:main",
+            "grasp_selector=micro_g_controllers.grasp_selector:main",
         ],
     },
 )
