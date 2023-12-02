@@ -84,6 +84,18 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
             type=ParameterType.PARAMETER_INTEGER,
             description="Number of times to attempt re-planning",
         )
+        home_x_desc = ParameterDescriptor(
+            type=ParameterType.PARAMETER_DOUBLE,
+            description="x coordinate of home position (m)",
+        )
+        home_z_desc = ParameterDescriptor(
+            type=ParameterType.PARAMETER_DOUBLE,
+            description="x coordinate of home position (m)",
+        )
+        timeout_desc = ParameterDescriptor(
+            type=ParameterType.PARAMETER_DOUBLE,
+            description="Wait this long after getting a target before moving home (s)",
+        )
         self.core.declare_parameter(
             "control_update_rate", 20.0, descriptor=control_rate_desc
         )
@@ -91,11 +103,17 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         self.core.declare_parameter(
             "replanning_attempts", 5, descriptor=replanning_attempts_desc
         )
+        self.core.declare_parameter("home_x", 0.1, descriptor=home_x_desc)
+        self.core.declare_parameter("home_z", 0.2, descriptor=home_z_desc)
+        self.core.declare_parameter("timeout", 1.0, descriptor=timeout_desc)
 
         # Get ROS parameters
         control_update_rate = self.core.get_parameter("control_update_rate").value
         moving_time = self.core.get_parameter("moving_time").value
         self.replanning_attempts = self.core.get_parameter("replanning_attempts").value
+        self.home = np.array([self.core.get_parameter("home_x").value, 0.0, self.core.get_parameter("home_z").value])
+        self.timeout = self.core.get_parameter("timeout").value
+        self.last_target_time = time.time()
 
         # Set the controller update rate
         self.control_update_rate = control_update_rate
@@ -172,6 +190,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
             self.core.get_logger().debug(
                 f"Received new desired pose T_sd:\n{self.T_sd}"
             )
+            self.last_target_time = time.time()
 
         except Exception as e:
             self.core.get_logger().error(
@@ -182,6 +201,15 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
     def update(self):
         """Run the controller and send commands to the robot."""
         self.core.get_logger().info("Updating pose servoing controller.")
+
+        # If we haven't received a target in a while, move home
+        if time.time() - self.last_target_time > self.timeout:
+            self.core.get_logger().info(f"No target received in {time.time() - self.last_target_time} s; moving home.")
+            self.T_sd[:3, 3] = self.home
+            self.gripper.grasp()
+        else:
+            self.gripper.release()
+
         # Convert the desired pose into the arm-aligned base frame
         T_ys = np.linalg.inv(self.T_sy)
         T_yd = np.dot(T_ys, self.T_sd)
