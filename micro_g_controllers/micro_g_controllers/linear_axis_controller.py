@@ -18,13 +18,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 """Use the servo-driven 5th axis to track the object position"""
-import time
 
 import rclpy
 from geometry_msgs.msg import PoseStamped
 from rcl_interfaces.msg import ParameterDescriptor, ParameterType
 from rclpy.node import Node
 from ticlib import TicUSB
+
 
 class LinearAxisController(Node):
     """A controller for the linear 5th axis"""
@@ -110,12 +110,14 @@ class LinearAxisController(Node):
         self.tic = self.configure_motor()
 
     def configure_motor(self) -> TicUSB:
-        """"Configure the Tic motor driver."""
+        """ "Configure the Tic motor driver."""
         tic = TicUSB()
 
         tic.energize()
         tic.exit_safe_start()
-        tic.set_max_speed(self.meters_per_second_to_microsteps_per_10k_seconds(self.max_speed))
+        tic.set_max_speed(
+            self.meters_per_second_to_microsteps_per_10k_seconds(self.max_speed)
+        )
         tic.halt_and_set_position(0)
 
         return tic
@@ -157,13 +159,17 @@ class LinearAxisController(Node):
         current_position = self.tic.get_current_position()
 
         if current_position < self.min_position:
-            self.get_logger().warn(f"Current position {current_position} is below min position {self.min_position}")
+            self.get_logger().warn(
+                f"Current position {current_position} is below min position {self.min_position}"
+            )
             deviation = current_position - self.min_position
-            deviation /= (self.max_position - self.min_position)
+            deviation /= self.max_position - self.min_position
         elif current_position > self.max_position:
-            self.get_logger().warn(f"Current position {current_position} is above max position {self.max_position}")
+            self.get_logger().warn(
+                f"Current position {current_position} is above max position {self.max_position}"
+            )
             deviation = current_position - self.max_position
-            deviation /= (self.max_position - self.min_position)
+            deviation /= self.max_position - self.min_position
         else:
             deviation = self.target_pose_y
 
@@ -174,8 +180,12 @@ class LinearAxisController(Node):
 
         speed_command = -self.kp * deviation
         speed_command = max(min(speed_command, self.max_speed), -self.max_speed)
-        speed_command_usteps_per_second = self.meters_per_second_to_microsteps_per_10k_seconds(speed_command)
-        self.get_logger().info(f"Speed command: {speed_command} ({speed_command_usteps_per_second} usteps/10ks)")
+        speed_command_usteps_per_second = (
+            self.meters_per_second_to_microsteps_per_10k_seconds(speed_command)
+        )
+        self.get_logger().info(
+            f"Speed command: {speed_command} ({speed_command_usteps_per_second} usteps/10ks)"
+        )
         self.tic.set_target_velocity(int(speed_command_usteps_per_second))
 
     def shutdown(self):
@@ -189,6 +199,7 @@ class LinearAxisController(Node):
             rclpy.spin(self)
         except KeyboardInterrupt:
             self.shutdown()
+
 
 def main(args=None):
     rclpy.init(args=args)
