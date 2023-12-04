@@ -18,10 +18,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-from launch.substitutions import LaunchConfiguration
 from launch import LaunchDescription
-from launch_ros.actions import Node
 from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
 
 
 def generate_launch_description():
@@ -53,6 +53,13 @@ def generate_launch_description():
                     "--robot_name",
                     LaunchConfiguration("robot_name"),
                 ],
+            ),
+            # Launch elements for the gantry controller
+            Node(
+                package="micro_g_controllers",
+                executable="linear_axis_controller",
+                name="linear_axis_controller_node",
+                output="screen",
             ),
         ]
     )

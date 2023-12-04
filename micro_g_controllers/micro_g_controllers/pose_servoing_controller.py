@@ -206,9 +206,9 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         if time.time() - self.last_target_time > self.timeout:
             self.core.get_logger().info(f"No target received in {time.time() - self.last_target_time} s; moving home.")
             self.T_sd[:3, 3] = self.home
-            self.gripper.grasp()
+            self.gripper.grasp(delay=0.0)
         else:
-            self.gripper.release()
+            self.gripper.release(delay=0.0)
 
         # Convert the desired pose into the arm-aligned base frame
         T_ys = np.linalg.inv(self.T_sy)
@@ -224,6 +224,10 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         rpy_yb = np.array(ang.rotation_matrix_to_euler_angles(T_yb[:3, :3]))
         rpy_yd = np.array(ang.rotation_matrix_to_euler_angles(T_yd[:3, :3]))
         rpy_offset = rpy_yd - rpy_yb
+
+        # Set the target to be 70% of the way to the goal, to avoid overshoot
+        position_offset *= 0.7
+        rpy_offset *= 0.7
 
         # Plan and execute. If planning fails (due to the pose not being reachable),
         # re-plan with a nearer goal until we succeed or a maximum number of planning

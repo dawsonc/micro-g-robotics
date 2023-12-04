@@ -94,7 +94,7 @@ class ObjectTrackerNode(Node):
 
         # If no detection was found, return
         if chosen_detection is None:
-            self.get_logger().warning("No valid AprilTag detections found")
+            self.get_logger().warn("No valid AprilTag detections found")
             return
 
         # Otherwise, get the position and rotation of the object center in the tag frame

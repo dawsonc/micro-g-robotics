@@ -22,6 +22,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 
@@ -136,6 +137,20 @@ def generate_launch_description() -> LaunchDescription:
                             FindPackageShare("micro_g_controllers"),
                             "launch",
                             "grasp_selector.launch.py",
+                        ]
+                    )
+                ]
+            ),
+        ),
+        # Foxglove
+        IncludeLaunchDescription(
+            XMLLaunchDescriptionSource(
+                [
+                    PathJoinSubstitution(
+                        [
+                            FindPackageShare("foxglove_bridge"),
+                            "launch",
+                            "foxglove_bridge_launch.xml",
                         ]
                     )
                 ]

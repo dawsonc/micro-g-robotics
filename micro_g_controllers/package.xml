@@ -22,6 +22,7 @@
   <depend>interbotix_xs_modules</depend>
   <depend>interbotix_xsarm_control</depend>
   <depend>python-transforms3d-pip</depend>
+  <depend>python-pyusb-pip</depend>
   <depend>rclpy</depend>
 
   <test_depend>ament_copyright</test_depend>

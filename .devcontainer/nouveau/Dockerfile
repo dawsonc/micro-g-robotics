@@ -13,6 +13,12 @@ RUN mkdir -p /etc/apt/keyrings \
     && sudo apt-get install -y librealsense2-dkms librealsense2-utils librealsense2-dev librealsense2-dbg \
     && sudo apt install -y ros-humble-realsense2-*
 
+# Install stepper driver
+RUN curl -LO https://www.pololu.com/file/0J1348/pololu-tic-1.8.1-linux-x86.tar.xz \
+    && tar -xvf pololu-tic-1.8.1-linux-x86.tar.xz \
+    && sudo pololu-tic-1.8.1-linux-x86/install.sh \
+    && rm -rf pololu-tic-1.8.1 pololu-tic-1.8.1-linux-x86.tar.xz
+
 # Install ROS dependencies
 # This is done in a previous stage, but we include it again here in case anyone wants to
 # add new dependencies during development
@@ -38,7 +44,13 @@ WORKDIR $USER_WORKSPACE
 RUN . "/opt/ros/${ROS_DISTRO}/setup.sh" \
     && colcon build --packages-select apriltag_ros
 
+# Install stepper driver python library
+RUN git clone https://github.com/jphalip/ticlib.git \
+    && cd ticlib \
+    && python3 -m pip install ticlib
+
 # Install debugging/linting Python packages
+WORKDIR $USER_WORKSPACE
 COPY --chown=$USER_UID:$USER_GID requirements-dev.txt .
 RUN python3 -m pip install -r requirements-dev.txt \
     && rm -rf requirements-dev.txt

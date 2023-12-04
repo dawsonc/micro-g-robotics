@@ -33,6 +33,7 @@ setup(
     entry_points={
         "console_scripts": [
             "pose_servoing_controller=micro_g_controllers.pose_servoing_controller:main",
+            "linear_axis_controller=micro_g_controllers.linear_axis_controller:main",
             "grasp_selector=micro_g_controllers.grasp_selector:main",
         ],
     },

@@ -4,5 +4,7 @@
 # Except the following
 !micro_g
 !micro_g_description
+!micro_g_controllers
+!micro_g_vision
 !micro_g.repos
 !requirements-dev.txt
