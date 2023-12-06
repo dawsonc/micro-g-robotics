@@ -19,15 +19,20 @@
 # THE SOFTWARE.
 """Use the servo-driven 5th axis to track the object position"""
 
-import rclpy
-from geometry_msgs.msg import PoseStamped
-from rcl_interfaces.msg import ParameterDescriptor, ParameterType
-from rclpy.node import Node
-from ticlib import TicUSB
-from rclpy.qos import qos_profile_system_default
-from rcl_interfaces.msg import SetParametersResult, Parameter
 from collections import namedtuple
 from time import time
+
+import rclpy
+from geometry_msgs.msg import PoseStamped
+from rcl_interfaces.msg import (
+    Parameter,
+    ParameterDescriptor,
+    ParameterType,
+    SetParametersResult,
+)
+from rclpy.node import Node
+from rclpy.qos import qos_profile_system_default
+from ticlib import TicUSB
 
 # Make a container that holds some of the command information that the controller uses
 Command = namedtuple("Command", ["command", "stamp"])
@@ -55,6 +60,30 @@ def meters_per_second_to_microsteps_per_10k_seconds(speed: float) -> int:
     steps_per_10k_seconds = steps_per_second * 1e4
     microsteps_per_10k_seconds = int(steps_per_10k_seconds * 2)
     return microsteps_per_10k_seconds
+
+
+def meters_to_microsteps(position: float) -> int:
+    """
+    Convert reasonable distance units into dumb distance units :(.
+
+    20 teeth per rotation, 2 mm per tooth
+    200 steps per rotation, 0.2 mm per step
+    distance is microsteps
+
+    2 mm/tooth * 20 teeth/rotation * 1/200 rotations/step = 0.2 mm/step
+
+    microsteps aren't 10^-6 steps, they're 2 per steps (whatever the substep setting is)
+
+    Args:
+        position: Position in meters
+
+    Returns:
+        Position in microsteps
+    """
+    meters_per_step = 0.2e-3
+    steps = position / meters_per_step
+    microsteps = int(steps * 2)
+    return microsteps
 
 
 class LinearAxisController(Node):
@@ -85,7 +114,7 @@ class LinearAxisController(Node):
                 ),
                 (
                     "kp",
-                    0.5,
+                    3.0,
                     ParameterDescriptor(
                         type=ParameterType.PARAMETER_DOUBLE,
                         description="P control gain.",
@@ -93,7 +122,7 @@ class LinearAxisController(Node):
                 ),
                 (
                     "max_speed",
-                    0.5,
+                    0.75,
                     ParameterDescriptor(
                         type=ParameterType.PARAMETER_DOUBLE,
                         description="Max speed in meters/second.",
@@ -109,7 +138,7 @@ class LinearAxisController(Node):
                 ),
                 (
                     "max_position",
-                    1500,
+                    2500,
                     ParameterDescriptor(
                         type=ParameterType.PARAMETER_INTEGER,
                         description="Max position in pulses from the home position.",
@@ -169,15 +198,14 @@ class LinearAxisController(Node):
         tic.set_max_speed(
             meters_per_second_to_microsteps_per_10k_seconds(self.max_speed)
         )
-        tic.halt_and_set_position(0)
+        tic.halt_and_set_position(-100)
 
         return tic
 
     def target_pose_callback(self, msg: PoseStamped):
         """Callback for the target pose subscriber"""
         self.get_logger().debug(f"Received pose {msg}")
-        self.control_cmd.command = msg.pose.position.y
-        self.control_cmd.stamp = time()
+        self.control_cmd = Command(msg.pose.position.y, time())
 
     def param_change_callback(self, params: list[Parameter]) -> SetParametersResult:
         """Update the current node parameters.
@@ -254,18 +282,16 @@ class LinearAxisController(Node):
             deviation = self.control_cmd.command
 
         # TODO(evan): fix the controller
-
         speed_command = -self.kp * deviation
         speed_command = max(min(speed_command, self.max_speed), -self.max_speed)
         speed_command_usteps_per_second = (
             meters_per_second_to_microsteps_per_10k_seconds(speed_command)
         )
-        self.get_logger().debug(
+        self.get_logger().info(
             f"Speed command: {speed_command} ({speed_command_usteps_per_second}"
             " usteps/10ks)"
         )
-
-        self.tic.set_target_velocity(int(speed_command_usteps_per_second))
+        self.tic.set_target_velocity(speed_command_usteps_per_second)
 
     def shutdown(self):
         """De-energize the stepper motor and enter safe start"""

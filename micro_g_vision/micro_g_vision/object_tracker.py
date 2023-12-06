@@ -51,7 +51,7 @@ class ObjectTrackerNode(Node):
         )
         self.declare_parameter("mwa_decay", 0.9, descriptor=mwa_decay_desc)
         self.mwa_decay = self.get_parameter("mwa_decay").value
-        self.mwa_position = np.zeros((3,))
+        self.mwa_position = None
         self.mwa_orientation = np.array([1.0, 0.0, 0.0, 0.0])  # w x y z
 
         # Create the ROS plumbing: a publisher for the object position, a
@@ -138,6 +138,8 @@ class ObjectTrackerNode(Node):
                 pose_camera_object.pose.position.z,
             ]
         )
+        if self.mwa_position is None:
+            self.mwa_position = new_position
         self.mwa_position = (
             self.mwa_decay * self.mwa_position + (1 - self.mwa_decay) * new_position
         )

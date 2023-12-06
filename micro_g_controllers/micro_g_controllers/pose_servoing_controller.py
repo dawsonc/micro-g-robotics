@@ -21,6 +21,7 @@ import argparse
 import sys
 import time
 
+import modern_robotics as mr
 import numpy as np
 import rclpy
 import tf2_ros
@@ -95,7 +96,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
                 ),
                 (
                     "kp",
-                    0.8,
+                    1.0,
                     ParameterDescriptor(
                         type=ParameterType.PARAMETER_DOUBLE,
                         description="Proportional gain for joint tracking controller",
@@ -209,6 +210,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
             self.core.get_logger().debug(f"Received new desired pose T_sd:\n{T_sd}")
 
             # Project the pose into the plane of the arm by zeroing the y coordinate
+            self.update_frames()
             T_ys = np.linalg.inv(self.T_sy)
             T_yd = np.dot(T_ys, T_sd)
             y_distance = T_yd[1, 3]
@@ -217,9 +219,9 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
 
             # If the target is too far away along the y axis, wait for the linear axis
             # controller to move the robot closer
-            if abs(y_distance) > 0.1:
+            if abs(y_distance) > 0.01:
                 self.core.get_logger().warn(
-                    f"Target is too far away along y axis ({y_distance} m); waiting for linear axis controller to move closer."
+                    f"Target is too far away along y axis ({y_distance} m)."
                 )
                 self.desired_joint_positions = self.home
                 return
@@ -245,7 +247,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         joint_angles = np.array(self.arm.get_joint_commands())
         initial_guesses = np.random.normal(
             joint_angles,
-            scale=np.pi / 4.0,
+            scale=np.pi / 3.0,
             size=(self.replanning_attempts, joint_angles.size),
         )
         # Start with the current joint angles as the first guess
@@ -253,12 +255,26 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
 
         # Try each initial guess until we find one that works or run out of guesses
         for initial_guess in initial_guesses:
-            theta_list, success = self.arm.set_ee_pose_matrix(
-                T_sd,
-                initial_guess,
-                execute=False,
+            # Manually do this rather than calling set_ee_pose_matrix so that we can
+            # manually set the angular and linear error tolerances
+            theta_list, success = mr.IKinSpace(
+                Slist=self.arm.robot_des.Slist,
+                M=self.arm.robot_des.M,
+                T=T_sd,
+                thetalist0=initial_guess,
+                eomg=0.1,
+                ev=0.001,
             )
+            success = True
 
+            # Check to make sure a solution was found and that no joint limits were violated
+            if success:
+                theta_list = self.arm._wrap_theta_list(theta_list)
+                success = self.arm._check_joint_limits(theta_list)
+            else:
+                success = False
+
+            # If we found a solution, return it; otherwise keep searching
             if success:
                 return theta_list, success
 
@@ -266,8 +282,6 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
 
     def update(self):
         """Run the controller and send commands to the robot."""
-        self.core.get_logger().info("Updating pose servoing controller.")
-
         # If we haven't received a target in a while, move home
         if time.time() - self.last_target_time > self.timeout:
             self.core.get_logger().info(
@@ -283,8 +297,6 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         q_current = np.array(self.arm.get_joint_commands())
         q_desired = np.array(self.desired_joint_positions)
         q_setpoint = q_current + (q_desired - q_current) * self.kp
-        self.core.get_logger().info(f"q_current: {q_current}")
-        self.core.get_logger().info(f"q_setpoint: {q_setpoint}")
         self.arm.set_joint_positions(
             q_setpoint.tolist(),
             blocking=False,
