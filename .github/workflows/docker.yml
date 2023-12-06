@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - feature-simulation-env
+      - charles/linear-axis
   pull_request:
     paths:
       - .docker/**

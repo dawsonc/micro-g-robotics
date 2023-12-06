@@ -4,3 +4,13 @@ repositories:
     type: git
     url: https://github.com/Interbotix/interbotix_ros_manipulators
     version: humble
+
+  apriltag_ros:
+    type: git
+    url: https://github.com/christianrauch/apriltag_ros
+    version: 3.1.2
+
+  ticlib:
+    type: git
+    url: https://github.com/jphalip/ticlib
+    version: main

@@ -61,7 +61,18 @@ WORKDIR $USER_WORKSPACE
 COPY --chown=$USER_UID:$USER_GID . src/micro-g-robotics
 RUN vcs import src < src/micro-g-robotics/micro_g.repos
 
+# Install stepper driver
+RUN curl -LO https://www.pololu.com/file/0J1348/pololu-tic-1.8.1-linux-x86.tar.xz \
+    && tar -xvf pololu-tic-1.8.1-linux-x86.tar.xz \
+    && sudo pololu-tic-1.8.1-linux-x86/install.sh \
+    && rm -rf pololu-tic-1.8.1 pololu-tic-1.8.1-linux-x86.tar.xz
+
+# Install stepper driver python library
+WORKDIR $USER_WORKSPACE/ticlib
+RUN python3 -m pip install ticlib
+
 # Install all ROS dependencies
+WORKDIR $USER_WORKSPACE
 RUN sudo apt-get -q update \
     && sudo apt-get -q -y upgrade \
     && rosdep update \
@@ -79,6 +90,26 @@ RUN sudo apt-get -q update \
     && sudo apt-get clean -y \
     && sudo rm -rf /var/lib/apt/lists/*
 RUN /bin/bash $USER_WORKSPACE/src/interbotix_ros_manipulators/interbotix_ros_xsarms/install/amd64/xsarm_amd64_install.sh -d humble -p $USER_WORKSPACE -n
+
+# Install RealSense SDK
+RUN mkdir -p /etc/apt/keyrings \
+    && curl -sSf https://librealsense.intel.com/Debian/librealsense.pgp | sudo tee /etc/apt/keyrings/librealsense.pgp > /dev/null \
+    && sudo apt-get -q update \
+    && sudo apt-get -q -y upgrade \
+    && sudo apt-get install -y apt-transport-https \
+    && echo "deb [signed-by=/etc/apt/keyrings/librealsense.pgp] https://librealsense.intel.com/Debian/apt-repo `lsb_release -cs` main" \
+    | sudo tee /etc/apt/sources.list.d/librealsense.list \
+    && sudo apt-get update -q \
+    && sudo apt-get -q -y upgrade \
+    && sudo apt-get install -y \
+    librealsense2-dkms \
+    librealsense2-utils \
+    librealsense2-dev \
+    librealsense2-dbg \
+    ros-humble-realsense2-* \
+    && sudo apt-get autoremove -y \
+    && sudo apt-get clean -y \
+    && sudo rm -rf /var/lib/apt/lists/*
 
 # Setup the ROS environment
 ENV IGN_GAZEBO_RESOURCE_PATH=$USER_WORKSPACE/install/micro_g_description/gazebo/worlds:$IGN_GAZEBO_RESOURCE_PATH
