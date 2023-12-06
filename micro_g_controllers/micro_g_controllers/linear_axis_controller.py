@@ -24,6 +24,37 @@ from geometry_msgs.msg import PoseStamped
 from rcl_interfaces.msg import ParameterDescriptor, ParameterType
 from rclpy.node import Node
 from ticlib import TicUSB
+from rclpy.qos import qos_profile_system_default
+from rcl_interfaces.msg import SetParametersResult, Parameter
+from collections import namedtuple
+from time import time
+
+# Make a container that holds some of the command information that the controller uses
+Command = namedtuple("Command", ["command", "stamp"])
+
+
+def meters_per_second_to_microsteps_per_10k_seconds(speed: float) -> int:
+    """
+    Convert reasonable speed units into dumb speed units :(.
+
+    20 teeth per rotation, 2 mm per tooth
+    200 steps per rotation, 0.2 mm per step
+    range 0-500,000,000
+    speed is microsteps per 10,000s
+
+    Example: speed of 200,000 corresponds to 20 microsteps per second.
+
+    Args:
+        speed: Speed in meters per second
+
+    Returns:
+        Speed in microsteps per 10,000s
+    """
+    meters_per_step = 0.2e-3
+    steps_per_second = speed / meters_per_step
+    steps_per_10k_seconds = steps_per_second * 1e4
+    microsteps_per_10k_seconds = int(steps_per_10k_seconds * 2)
+    return microsteps_per_10k_seconds
 
 
 class LinearAxisController(Node):
@@ -84,108 +115,156 @@ class LinearAxisController(Node):
                         description="Max position in pulses from the home position.",
                     ),
                 ),
+                (
+                    "command_timeout",
+                    1.0,
+                    ParameterDescriptor(
+                        type=ParameterType.PARAMETER_DOUBLE,
+                        description=(
+                            "Maximum duration before a command is considered stale and"
+                            " the controller stops."
+                        ),
+                    ),
+                ),
             ],
         )
+
         self.input_topic = self.get_parameter("input_topic").value
         self.kp = self.get_parameter("kp").value
         self.max_speed = self.get_parameter("max_speed").value
         self.min_position = self.get_parameter("min_position").value
         self.max_position = self.get_parameter("max_position").value
         self.control_update_rate = self.get_parameter("control_frequency").value
-        self.rate = self.create_rate(self.control_update_rate)
+        self.command_timeout = self.get_parameter("command_timeout").value
 
         # Declare a place to save the target object y coordinate
         self.target_pose_y = 0.0
 
-        # Declare subscriptions and publications
-        self.get_logger().info(f"Subscribing to {self.input_topic}")
-        self.subscription = self.create_subscription(
-            PoseStamped, self.input_topic, self.target_pose_callback, 10
+        # Save the control command
+        # We store the time at which the command was received so that we can check if it
+        # is stale
+        self.control_cmd = Command(0, time())
+
+        # Declare subscriptions
+        self.get_logger().debug(f"Subscribing to {self.input_topic}")
+        self.create_subscription(
+            PoseStamped,
+            self.input_topic,
+            self.target_pose_callback,
+            qos_profile_system_default,
         )
 
-        # TODO (evan): remove when we're done debugging
-        self.deviation_pub = self.create_publisher(PoseStamped, "/px100/deviation", 10)
+        # Add a callback to handle parameter updates
+        self.add_on_set_parameters_callback(self.param_change_callback)
 
         # Create the interface to the motor and configure it
-        self.tic = self.configure_motor()
+        self.tic = self.configure_tic()
 
-    def configure_motor(self) -> TicUSB:
-        """ "Configure the Tic motor driver."""
+    def configure_tic(self) -> TicUSB:
+        """Initialize and configure the Tic motor driver."""
         tic = TicUSB()
 
         tic.energize()
         tic.exit_safe_start()
         tic.set_max_speed(
-            self.meters_per_second_to_microsteps_per_10k_seconds(self.max_speed)
+            meters_per_second_to_microsteps_per_10k_seconds(self.max_speed)
         )
         tic.halt_and_set_position(0)
 
         return tic
 
-    @staticmethod
-    def meters_per_second_to_microsteps_per_10k_seconds(speed: float) -> int:
-        """
-        Convert reasonable speed units into dumb speed units :(.
-
-        20 teeth per rotation, 2 mm per tooth
-        200 steps per rotation, 0.2 mm per step
-        range 0-500,000,000
-        speed is microsteps per 10,000s
-
-        Example: speed of 200,000 corresponds to 20 microsteps per second.
-
-        Args:
-            speed: Speed in meters per second
-
-        Returns:
-            Speed in microsteps per 10,000s
-        """
-        meters_per_step = 0.2e-3
-        steps_per_second = speed / meters_per_step
-        steps_per_10k_seconds = steps_per_second * 1e4
-        microsteps_per_10k_seconds = int(steps_per_10k_seconds * 2)
-        return microsteps_per_10k_seconds
-
     def target_pose_callback(self, msg: PoseStamped):
         """Callback for the target pose subscriber"""
-        self.get_logger().info(f"Received pose {msg}")
-        self.target_pose_y = msg.pose.position.y
+        self.get_logger().debug(f"Received pose {msg}")
+        self.control_cmd.command = msg.pose.position.y
+        self.control_cmd.stamp = time()
+
+    def param_change_callback(self, params: list[Parameter]) -> SetParametersResult:
+        """Update the current node parameters.
+
+        This allows us to dynamically change controller gains and other parameters while
+        the robot is running.
+
+        Args:
+            params: The list of parameters to update.
+
+        Returns:
+            Whether or not the provided parameters were successfully updated. This will
+            only fail if the parameter doesn't exist or doesn't support dynamic updating.
+        """
+        update_successful = True
+
+        for param in params:
+            match param.name:
+                case "kp":
+                    self.kp = param.value
+                case "max_speed":
+                    self.max_speed = param.value
+                case "min_position":
+                    self.min_position = param.value
+                case "max_position":
+                    self.max_position = param.value
+                case "command_timeout":
+                    self.command_timeout = param.value
+                case _:
+                    self.get_logger().warning(
+                        f"Could not update {param.name}, parameter does not exist or"
+                        " does not support dynamic updating."
+                    )
+                    update_successful = False
+
+        return SetParametersResult(successful=update_successful)
 
     def update(self):
         """Update the controller"""
+        time_since_last_command = time() - self.control_cmd.stamp
+        if time_since_last_command > self.command_timeout:
+            self.get_logger().warning(
+                "Latest control command is stale. Stopping linear axis motor."
+            )
+            self.get_logger().debug(
+                f"Time since last command: {time_since_last_command}"
+            )
+            #
+            self.tic.set_target_velocity(0)
+            return
+
         # We want to track the object so that its y coordinate in the robot frame
         # is zero. Implement P control over velocity to do this, but be sure to respect
         # the joint limits.
         current_position = self.tic.get_current_position()
 
         if current_position < self.min_position:
-            self.get_logger().warn(
-                f"Current position {current_position} is below min position {self.min_position}"
+            self.get_logger().warning(
+                f"Current position {current_position} is below min position"
+                f" {self.min_position}"
             )
-            deviation = current_position - self.min_position
-            deviation /= self.max_position - self.min_position
+            deviation = (current_position - self.min_position) / (
+                self.max_position - self.min_position
+            )
         elif current_position > self.max_position:
-            self.get_logger().warn(
-                f"Current position {current_position} is above max position {self.max_position}"
+            self.get_logger().warning(
+                f"Current position {current_position} is above max position"
+                f" {self.max_position}"
             )
-            deviation = current_position - self.max_position
-            deviation /= self.max_position - self.min_position
+            deviation = (current_position - self.max_position) / (
+                self.max_position - self.min_position
+            )
         else:
-            deviation = self.target_pose_y
+            deviation = self.control_cmd.command
 
-        # TODO(evan): remove when we're done debugging
-        deviation_msg = PoseStamped()
-        deviation_msg.pose.position.y = deviation
-        self.deviation_pub.publish(deviation_msg)
+        # TODO(evan): fix the controller
 
         speed_command = -self.kp * deviation
         speed_command = max(min(speed_command, self.max_speed), -self.max_speed)
         speed_command_usteps_per_second = (
-            self.meters_per_second_to_microsteps_per_10k_seconds(speed_command)
+            meters_per_second_to_microsteps_per_10k_seconds(speed_command)
         )
-        self.get_logger().info(
-            f"Speed command: {speed_command} ({speed_command_usteps_per_second} usteps/10ks)"
+        self.get_logger().debug(
+            f"Speed command: {speed_command} ({speed_command_usteps_per_second}"
+            " usteps/10ks)"
         )
+
         self.tic.set_target_velocity(int(speed_command_usteps_per_second))
 
     def shutdown(self):
