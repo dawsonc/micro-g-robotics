@@ -126,6 +126,9 @@ class LinearAxisController(Node):
         )
         tic.halt_and_set_position(-100)
 
+        tic.set_max_acceleration(self.params.acceleration_limits.max)
+        tic.set_max_deceleration(self.params.acceleration_limits.min)
+
         return tic
 
     def update_parameters_callback(self):
@@ -143,7 +146,7 @@ class LinearAxisController(Node):
         """Update the controller"""
         time_since_last_command = time() - self.control_cmd.stamp
         if time_since_last_command > self.params.command_timeout:
-            self.get_logger().warning(
+            self.get_logger().debug(
                 "Latest control command is stale. Stopping linear axis motor."
             )
             self.get_logger().debug(
@@ -185,7 +188,7 @@ class LinearAxisController(Node):
         speed_command_usteps_per_second = (
             meters_per_second_to_microsteps_per_10k_seconds(speed_command)
         )
-        self.get_logger().info(
+        self.get_logger().debug(
             f"Speed command: {speed_command} ({speed_command_usteps_per_second}"
             " usteps/10ks)"
         )

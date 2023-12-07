@@ -143,6 +143,10 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
             self.param_listener.refresh_dynamic_parameters()
             self.params = self.param_listener.get_params()
 
+            self.arm.set_trajectory_time(
+                self.params.moving_time, self.params.moving_time / 2.0
+            )
+
     def desired_pose_callback(self, msg: PoseStamped):
         """
         Process a desired pose.

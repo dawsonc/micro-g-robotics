@@ -48,6 +48,19 @@ linear_axis_controller:
       read_only: false,
       description: "Max motor position from the home position (pulses)"
     }
+  acceleration_limits:
+    min: {
+      type: int,
+      default_value: -1000000,
+      read_only: false,
+      description: "Min motor acceleration (pulses)"
+    }
+    max: {
+      type: int,
+      default_value: 1000000,
+      read_only: false,
+      description: "Max motor acceleration (pulses)"
+    }
   command_timeout: {
     type: double,
     default_value: 1.0,

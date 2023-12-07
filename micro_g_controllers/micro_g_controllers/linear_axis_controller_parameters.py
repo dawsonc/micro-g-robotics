@@ -20,13 +20,17 @@ class linear_axis_controller:
 
         input_topic = "/px100/desired_eef_pose"
         control_frequency = 20.0
-        kp = 3.0
-        max_speed = 0.75
+        kp = 2.0
+        max_speed = 1.0
         command_timeout = 1.0
         class __PositionLimits:
             min = 0
             max = 2500
         position_limits = __PositionLimits()
+        class __AccelerationLimits:
+            min = -1000000
+            max = 1000000
+        acceleration_limits = __AccelerationLimits()
 
 
 
@@ -101,6 +105,14 @@ class linear_axis_controller:
                     updated_params.position_limits.max = param.value
                     self.logger_.debug(param.name + ": " + param.type_.name + " = " + str(param.value))
 
+                if param.name == self.prefix_ + "acceleration_limits.min":
+                    updated_params.acceleration_limits.min = param.value
+                    self.logger_.debug(param.name + ": " + param.type_.name + " = " + str(param.value))
+
+                if param.name == self.prefix_ + "acceleration_limits.max":
+                    updated_params.acceleration_limits.max = param.value
+                    self.logger_.debug(param.name + ": " + param.type_.name + " = " + str(param.value))
+
                 if param.name == self.prefix_ + "command_timeout":
                     validation_result = ParameterValidators.gt_eq(param, 0.0)
                     if validation_result:
@@ -159,6 +171,16 @@ class linear_axis_controller:
                 parameter = updated_params.position_limits.max
                 self.node_.declare_parameter(self.prefix_ + "position_limits.max", parameter, descriptor)
 
+            if not self.node_.has_parameter(self.prefix_ + "acceleration_limits.min"):
+                descriptor = ParameterDescriptor(description="Min motor acceleration (pulses)", read_only = False)
+                parameter = updated_params.acceleration_limits.min
+                self.node_.declare_parameter(self.prefix_ + "acceleration_limits.min", parameter, descriptor)
+
+            if not self.node_.has_parameter(self.prefix_ + "acceleration_limits.max"):
+                descriptor = ParameterDescriptor(description="Max motor acceleration (pulses)", read_only = False)
+                parameter = updated_params.acceleration_limits.max
+                self.node_.declare_parameter(self.prefix_ + "acceleration_limits.max", parameter, descriptor)
+
             if not self.node_.has_parameter(self.prefix_ + "command_timeout"):
                 descriptor = ParameterDescriptor(description="Max duration before a command is considered stale and the controller stops", read_only = False)
                 descriptor.floating_point_range.append(FloatingPointRange())
@@ -199,6 +221,12 @@ class linear_axis_controller:
             param = self.node_.get_parameter(self.prefix_ + "position_limits.max")
             self.logger_.debug(param.name + ": " + param.type_.name + " = " + str(param.value))
             updated_params.position_limits.max = param.value
+            param = self.node_.get_parameter(self.prefix_ + "acceleration_limits.min")
+            self.logger_.debug(param.name + ": " + param.type_.name + " = " + str(param.value))
+            updated_params.acceleration_limits.min = param.value
+            param = self.node_.get_parameter(self.prefix_ + "acceleration_limits.max")
+            self.logger_.debug(param.name + ": " + param.type_.name + " = " + str(param.value))
+            updated_params.acceleration_limits.max = param.value
             param = self.node_.get_parameter(self.prefix_ + "command_timeout")
             self.logger_.debug(param.name + ": " + param.type_.name + " = " + str(param.value))
             validation_result = ParameterValidators.gt_eq(param, 0.0)
