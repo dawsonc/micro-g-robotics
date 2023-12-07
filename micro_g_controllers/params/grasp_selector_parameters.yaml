@@ -1,0 +1,47 @@
+grasp_selector:
+  target_frame: {
+    type: string,
+    default_value: "world",
+    read_only: true,
+    description: "Name of TF frame that grasp should be expressed in.",
+    validation: {
+      not_empty<>: null
+    }
+  }
+  input_topic: {
+    type: string,
+    default_value: "object_pose",
+    read_only: true,
+    description: "Name of PoseStamped topic with the object pose.",
+    validation: {
+      not_empty<>: null
+    }
+  }
+  output_topic: {
+    type: string,
+    default_value: "desired_eef_pose",
+    read_only: true,
+    description: "Name of PoseStamped topic to publish with grasp.",
+    validation: {
+      not_empty<>: null
+    }
+  }
+  offset:
+    x: {
+      type: double,
+      default_value: 0.0,
+      read_only: false,
+      description: "X-axis offset from object_pose to desired_eef_pose."
+    }
+    y: {
+      type: double,
+      default_value: 0.0,
+      read_only: false,
+      description: "Y-axis offset from object_pose to desired_eef_pose."
+    }
+    z: {
+      type: double,
+      default_value: 0.0,
+      read_only: false,
+      description: "Z-axis offset from object_pose to desired_eef_pose."
+    }

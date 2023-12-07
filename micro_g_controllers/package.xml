@@ -23,6 +23,7 @@
   <depend>interbotix_xsarm_control</depend>
   <depend>python-transforms3d-pip</depend>
   <depend>python-pyusb-pip</depend>
+  <depend>generate_parameter_library</depend>
   <depend>rclpy</depend>
 
   <test_depend>ament_copyright</test_depend>

@@ -1,0 +1,43 @@
+pose_servoing:
+  control_update_rate: {
+    type: double,
+    default_value: 20.0,
+    read_only: true,
+    description: "Control update rate in Hz",
+    validation: {
+      gt_eq<>: [ 0.0001 ],
+    }
+  }
+  moving_time: {
+    type: double,
+    default_value: 0.5,
+    read_only: false,
+    description: "Moving time in seconds"
+  }
+  kp: {
+    type: double,
+    default_value: 1.0,
+    read_only: false,
+    description: "Proportional gain for joint tracking controller",
+    validation: {
+      gt_eq<>: [ 0.0001 ],
+    }
+  }
+  replanning_attempts: {
+    type: int,
+    default_value: 5,
+    read_only: false,
+    description: "Number of times to attempt re-planning",
+    validation: {
+      gt_eq<>: [ 0 ],
+    }
+  }
+  timeout: {
+    type: double,
+    default_value: 1.0,
+    read_only: false,
+    description: "Wait this long after getting a target before moving home (s)",
+    validation: {
+      gt_eq<>: [ 0.0001 ],
+    }
+  }

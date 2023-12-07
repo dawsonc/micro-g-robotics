@@ -20,93 +20,51 @@
 import rclpy
 import tf2_ros
 from geometry_msgs.msg import PoseStamped
-from rcl_interfaces.msg import ParameterDescriptor, ParameterType
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from tf2_geometry_msgs import do_transform_pose
 from tf2_ros import Buffer, TransformListener
 
+from micro_g_controllers.grasp_selector_parameters import grasp_selector
+
 
 class GraspSelectorNode(Node):
     def __init__(self):
-        super().__init__("grasp_selector_node")
+        super().__init__("grasp_selector")
 
-        # Load configurable parameters
-        self.declare_parameters(
-            namespace="",
-            parameters=[
-                (
-                    "target_frame",
-                    "world",
-                    ParameterDescriptor(
-                        type=ParameterType.PARAMETER_STRING,
-                        description="Name of TF frame that grasp should be expressed in.",
-                    ),
-                ),
-                (
-                    "input_topic",
-                    "object_pose",
-                    ParameterDescriptor(
-                        type=ParameterType.PARAMETER_STRING,
-                        description="Name of PoseStamped topic with the object pose.",
-                    ),
-                ),
-                (
-                    "output_topic",
-                    "desired_eef_pose",
-                    ParameterDescriptor(
-                        type=ParameterType.PARAMETER_STRING,
-                        description="Name of PoseStamped topic to publish with grasp.",
-                    ),
-                ),
-                (
-                    "x_offset",
-                    0.0,
-                    ParameterDescriptor(
-                        type=ParameterType.PARAMETER_DOUBLE,
-                        description="X-axis offset from object_pose to desired_eef_pose.",
-                    ),
-                ),
-                (
-                    "y_offset",
-                    0.0,
-                    ParameterDescriptor(
-                        type=ParameterType.PARAMETER_DOUBLE,
-                        description="Y-axis offset from object_pose to desired_eef_pose.",
-                    ),
-                ),
-                (
-                    "z_offset",
-                    0.0,
-                    ParameterDescriptor(
-                        type=ParameterType.PARAMETER_DOUBLE,
-                        description="Z-axis offset from object_pose to desired_eef_pose.",
-                    ),
-                ),
-            ],
+        self.param_listener = grasp_selector.ParamListener(self)
+        self.params = self.param_listener.get_params()
+        self.create_timer(
+            1, self.update_parameters_callback, MutuallyExclusiveCallbackGroup()
         )
-        self.target_frame = self.get_parameter("target_frame").value
-        self.input_topic = self.get_parameter("input_topic").value
-        self.output_topic = self.get_parameter("output_topic").value
-        self.x_offset = self.get_parameter("x_offset").value
-        self.y_offset = self.get_parameter("y_offset").value
-        self.z_offset = self.get_parameter("z_offset").value
 
         # Declare subscriptions and publications
         self.get_logger().info(
-            f"Subscribing to {self.input_topic}, publishing to {self.output_topic}"
+            f"Subscribing to {self.params.input_topic}, publishing to"
+            f" {self.params.output_topic}"
         )
         self.subscription = self.create_subscription(
-            PoseStamped, self.input_topic, self.object_pose_callback, 10
+            PoseStamped, self.params.input_topic, self.object_pose_callback, 10
         )
-        self.publisher = self.create_publisher(PoseStamped, self.output_topic, 10)
+        self.publisher = self.create_publisher(
+            PoseStamped, self.params.output_topic, 10
+        )
+
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
+
+    def update_parameters_callback(self):
+        """Update the ROS parameters."""
+        if self.param_listener.is_old(self.params):
+            self.param_listener.refresh_dynamic_parameters()
+            self.params = self.param_listener.get_params()
 
     def object_pose_callback(self, object_pose):
         try:
             # Transform the object pose into the world frame
             transform = self.tf_buffer.lookup_transform(
-                self.target_frame,
+                self.params.target_frame,
                 object_pose.header.frame_id,
                 rclpy.time.Time(),
             )
@@ -115,16 +73,22 @@ class GraspSelectorNode(Node):
                 f"Object pose in {object_pose.header.frame_id}: {object_pose.pose}"
             )
             self.get_logger().debug(
-                f"Object pose in {self.target_frame}: {object_pose_world}"
+                f"Object pose in {self.params.target_frame}: {object_pose_world}"
             )
 
             # Create a pose with a fixed orientation aligned with the world frame
             desired_pose = PoseStamped()
             desired_pose.header.frame_id = "world"
             desired_pose.header.stamp = object_pose.header.stamp
-            desired_pose.pose.position.x = object_pose_world.position.x + self.x_offset
-            desired_pose.pose.position.y = object_pose_world.position.y + self.y_offset
-            desired_pose.pose.position.z = object_pose_world.position.z + self.z_offset
+            desired_pose.pose.position.x = (
+                object_pose_world.position.x + self.params.offset.x
+            )
+            desired_pose.pose.position.y = (
+                object_pose_world.position.y + self.params.offset.y
+            )
+            desired_pose.pose.position.z = (
+                object_pose_world.position.z + self.params.offset.z
+            )
             self.get_logger().debug(f"Desired pose: {desired_pose}")
 
             # Publish the transformed pose
@@ -140,7 +104,10 @@ class GraspSelectorNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
+
     node = GraspSelectorNode()
-    rclpy.spin(node)
+    executor = MultiThreadedExecutor()
+    rclpy.spin(node, executor)
+
     node.destroy_node()
     rclpy.shutdown()

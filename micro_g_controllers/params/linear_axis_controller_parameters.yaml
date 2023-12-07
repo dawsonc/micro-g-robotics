@@ -1,0 +1,59 @@
+linear_axis_controller:
+  input_topic: {
+    type: string,
+    default_value: "/px100/desired_eef_pose",
+    read_only: true,
+    description: "Name of PoseStamped topic with the object pose.",
+    validation: {
+      not_empty<>: null
+    }
+  }
+  control_frequency: {
+    type: double,
+    default_value: 20.0,
+    read_only: false,
+    description: "Control rate (Hz).",
+    validation: {
+      gt_eq<>: [ 0.0001 ],
+    }
+  }
+  kp: {
+    type: double,
+    default_value: 3.0,
+    read_only: false,
+    description: "Proportional gain for linear axis controller",
+    validation: {
+      gt_eq<>: [ 0.0001 ],
+    }
+  }
+  max_speed: {
+    type: double,
+    default_value: 0.75,
+    read_only: false,
+    description: "Max speed (m/s)",
+    validation: {
+      gt_eq<>: [ 0.0 ],
+    }
+  }
+  position_limits:
+    min: {
+      type: int,
+      default_value: 0,
+      read_only: false,
+      description: "Min motor position (pulses)"
+    }
+    max: {
+      type: int,
+      default_value: 2500,
+      read_only: false,
+      description: "Max motor position from the home position (pulses)"
+    }
+  command_timeout: {
+    type: double,
+    default_value: 1.0,
+    read_only: false,
+    description: "Max duration before a command is considered stale and the controller stops",
+    validation: {
+      gt_eq<>: [ 0.0 ],
+    }
+  }

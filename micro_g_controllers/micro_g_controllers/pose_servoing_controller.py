@@ -29,10 +29,15 @@ import transforms3d
 from geometry_msgs.msg import PoseStamped
 from interbotix_common_modules.angle_manipulation import angle_manipulation as ang
 from interbotix_xs_modules.xs_robot.arm import InterbotixManipulatorXS
-from rcl_interfaces.msg import ParameterDescriptor, ParameterType
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from rclpy.executors import MultiThreadedExecutor
 from rclpy.qos import qos_profile_system_default
 from rclpy.utilities import remove_ros_args
 from tf2_geometry_msgs import do_transform_pose
+
+from micro_g_controllers.pose_servoing_controller_parameters import (
+    pose_servoing_controller,
+)
 
 
 class XSArmPoseServoingController(InterbotixManipulatorXS):
@@ -42,7 +47,6 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         self,
         robot_model: str,
         robot_name: str,
-        control_update_rate: float = 20.0,
         moving_time: float = 0.5,
         xs_args=None,
     ):
@@ -74,67 +78,23 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
             node_name="pose_servoing",
         )
 
-        # Declare ROS parameters
-        self.core.declare_parameters(
-            namespace="",
-            parameters=[
-                (
-                    "control_update_rate",
-                    control_update_rate,
-                    ParameterDescriptor(
-                        type=ParameterType.PARAMETER_DOUBLE,
-                        description="Control update rate in Hz",
-                    ),
-                ),
-                (
-                    "moving_time",
-                    moving_time,
-                    ParameterDescriptor(
-                        type=ParameterType.PARAMETER_DOUBLE,
-                        description="Moving time in seconds",
-                    ),
-                ),
-                (
-                    "kp",
-                    1.0,
-                    ParameterDescriptor(
-                        type=ParameterType.PARAMETER_DOUBLE,
-                        description="Proportional gain for joint tracking controller",
-                    ),
-                ),
-                (
-                    "replanning_attempts",
-                    5,
-                    ParameterDescriptor(
-                        type=ParameterType.PARAMETER_INTEGER,
-                        description="Number of times to attempt re-planning",
-                    ),
-                ),
-                (
-                    "timeout",
-                    1.0,
-                    ParameterDescriptor(
-                        type=ParameterType.PARAMETER_DOUBLE,
-                        description="Wait this long after getting a target before moving home (s)",
-                    ),
-                ),
-            ],
+        # Setup the node parameters
+        self.param_listener = pose_servoing_controller.ParamListener(self.core)
+        self.params = self.param_listener.get_params()
+        self.create_timer(
+            1, self.update_parameters_callback, MutuallyExclusiveCallbackGroup()
         )
 
-        # Get ROS parameters
-        control_update_rate = self.core.get_parameter("control_update_rate").value
-        moving_time = self.core.get_parameter("moving_time").value
-        self.kp = self.core.get_parameter("kp").value
-        self.replanning_attempts = self.core.get_parameter("replanning_attempts").value
         self.home = [0.0, -1.494097352027893, 0.9418642520904541, 0.5338253378868103]
-        self.timeout = self.core.get_parameter("timeout").value
         self.last_target_time = time.time()
 
         # Initialize the gripper state
         self.gripper.release(delay=0.0)
 
         # Update the moving time (and set acceleration time to half of moving time)
-        self.arm.set_trajectory_time(moving_time, moving_time / 2.0)
+        self.arm.set_trajectory_time(
+            self.params.moving_time, self.params.moving_time / 2.0
+        )
 
         # Define the transforms we'll use. Notation is T_{to}{from}.
         # Frames are:
@@ -164,8 +124,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         self.core.get_logger().info("Ready to receive servoing commands.")
 
         # Set the controller update rate
-        self.control_update_rate = control_update_rate
-        self.core.create_timer(1.0 / self.control_update_rate, self.update)
+        self.core.create_timer(1.0 / self.params.control_update_rate, self.update)
 
     def update_frames(self):
         """
@@ -177,6 +136,12 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         T_sb = self.arm.get_ee_pose_command()  # Current EEF pose in space frame
         rpy = ang.rotation_matrix_to_euler_angles(T_sb[:3, :3])
         self.T_sy[:2, :2] = ang.yaw_to_rotation_matrix(rpy[2])
+
+    def update_parameters_callback(self):
+        """Update the ROS parameters."""
+        if self.param_listener.is_old(self.params):
+            self.param_listener.refresh_dynamic_parameters()
+            self.params = self.param_listener.get_params()
 
     def desired_pose_callback(self, msg: PoseStamped):
         """
@@ -248,7 +213,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         initial_guesses = np.random.normal(
             joint_angles,
             scale=np.pi / 3.0,
-            size=(self.replanning_attempts, joint_angles.size),
+            size=(self.params.replanning_attempts, joint_angles.size),
         )
         # Start with the current joint angles as the first guess
         initial_guesses = np.vstack([joint_angles, initial_guesses])
@@ -283,7 +248,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
     def update(self):
         """Run the controller and send commands to the robot."""
         # If we haven't received a target in a while, move home
-        if time.time() - self.last_target_time > self.timeout:
+        if time.time() - self.last_target_time > self.params.timeout:
             self.core.get_logger().info(
                 f"No target received in {time.time() - self.last_target_time} s; moving home."
             )
@@ -296,7 +261,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         self.arm.capture_joint_positions()
         q_current = np.array(self.arm.get_joint_commands())
         q_desired = np.array(self.desired_joint_positions)
-        q_setpoint = q_current + (q_desired - q_current) * self.kp
+        q_setpoint = q_current + (q_desired - q_current) * self.params.kp
         self.arm.set_joint_positions(
             q_setpoint.tolist(),
             blocking=False,
@@ -306,7 +271,8 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         """Run the controller until ROS triggers a shutdown."""
         try:
             self.start()
-            rclpy.spin(self.core)
+            executor = MultiThreadedExecutor()
+            rclpy.spin(self.core, executor)
         except KeyboardInterrupt:
             self.shutdown()
 
