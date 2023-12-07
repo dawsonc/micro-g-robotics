@@ -198,7 +198,7 @@ class LinearAxisController(Node):
 
     def start(self):
         try:
-            self.create_timer(1.0 / self.params.control_update_rate, self.update)
+            self.create_timer(1.0 / self.params.control_frequency, self.update)
             executor = MultiThreadedExecutor()
             rclpy.spin(self, executor)
         except KeyboardInterrupt:

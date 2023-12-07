@@ -36,7 +36,7 @@ from rclpy.utilities import remove_ros_args
 from tf2_geometry_msgs import do_transform_pose
 
 from micro_g_controllers.pose_servoing_controller_parameters import (
-    pose_servoing_controller,
+    pose_servoing,
 )
 
 
@@ -79,9 +79,9 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         )
 
         # Setup the node parameters
-        self.param_listener = pose_servoing_controller.ParamListener(self.core)
+        self.param_listener = pose_servoing.ParamListener(self.core)
         self.params = self.param_listener.get_params()
-        self.create_timer(
+        self.core.create_timer(
             1, self.update_parameters_callback, MutuallyExclusiveCallbackGroup()
         )
 

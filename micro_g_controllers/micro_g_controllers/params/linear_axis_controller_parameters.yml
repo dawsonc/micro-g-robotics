@@ -19,7 +19,7 @@ linear_axis_controller:
   }
   kp: {
     type: double,
-    default_value: 3.0,
+    default_value: 2.0,
     read_only: false,
     description: "Proportional gain for linear axis controller",
     validation: {
@@ -28,7 +28,7 @@ linear_axis_controller:
   }
   max_speed: {
     type: double,
-    default_value: 0.75,
+    default_value: 1.0,
     read_only: false,
     description: "Max speed (m/s)",
     validation: {

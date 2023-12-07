@@ -1,23 +1,23 @@
 import os
 from glob import glob
 
-from setuptools import find_packages, setup
 from generate_parameter_library_py.setup_helper import generate_parameter_module
+from setuptools import find_packages, setup
 
 package_name = "micro_g_controllers"
 
 # Generate parameter libraries
 generate_parameter_module(
     "grasp_selector_parameters",
-    "params/grasp_selector_parameters.yaml",
+    "micro_g_controllers/params/grasp_selector_parameters.yml",
 )
 generate_parameter_module(
     "linear_axis_controller_parameters",
-    "params/linear_axis_controller_parameters.yaml",
+    "micro_g_controllers/params/linear_axis_controller_parameters.yml",
 )
 generate_parameter_module(
     "pose_servoing_controller_parameters",
-    "params/pose_servoing_controller_parameters.yaml",
+    "micro_g_controllers/params/pose_servoing_controller_parameters.yml",
 )
 
 setup(
