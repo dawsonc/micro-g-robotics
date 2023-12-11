@@ -53,6 +53,20 @@ def generate_launch_description():
                 launch_arguments={
                     "robot_model": LaunchConfiguration("robot_model"),
                     "use_sim": LaunchConfiguration("use_sim"),
+                    "motor_configs": PathJoinSubstitution(
+                        [
+                            FindPackageShare("micro_g"),
+                            "config",
+                            "px100.yml",
+                        ]
+                    ),
+                    "mode_configs": PathJoinSubstitution(
+                        [
+                            FindPackageShare("micro_g"),
+                            "config",
+                            "modes.yml",
+                        ]
+                    ),
                 }.items(),
             ),
         ]

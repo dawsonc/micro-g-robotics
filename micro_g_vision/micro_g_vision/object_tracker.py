@@ -17,6 +17,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
+import time
 import numpy as np
 import rclpy
 import transforms3d
@@ -53,6 +54,8 @@ class ObjectTrackerNode(Node):
         self.mwa_decay = self.get_parameter("mwa_decay").value
         self.mwa_position = None
         self.mwa_orientation = np.array([1.0, 0.0, 0.0, 0.0])  # w x y z
+        self.target_position = None
+        self.last_target_time = time.time()
 
         # Create the ROS plumbing: a publisher for the object position, a
         # subscription to the AprilTag detections, and a TF buffer and listener.
@@ -70,6 +73,8 @@ class ObjectTrackerNode(Node):
             self.detection_callback,
             qos_profile_system_default,
         )
+
+        self.create_timer(1.0 / 20.0, self.publish)
 
     def detection_callback(self, msg):
         """Process AprilTag detections."""
@@ -130,20 +135,14 @@ class ObjectTrackerNode(Node):
         pose_camera_object.header.stamp = self.get_clock().now().to_msg()
         pose_camera_object.pose = do_transform_pose(pose_tag_object.pose, transform)
 
-        # Update the moving average filter
-        new_position = np.array(
+        self.target_position = np.array(
             [
                 pose_camera_object.pose.position.x,
                 pose_camera_object.pose.position.y,
                 pose_camera_object.pose.position.z,
             ]
         )
-        if self.mwa_position is None:
-            self.mwa_position = new_position
-        self.mwa_position = (
-            self.mwa_decay * self.mwa_position + (1 - self.mwa_decay) * new_position
-        )
-        new_orientation = np.array(
+        self.target_orientation = np.array(
             [
                 pose_camera_object.pose.orientation.w,
                 pose_camera_object.pose.orientation.x,
@@ -151,11 +150,31 @@ class ObjectTrackerNode(Node):
                 pose_camera_object.pose.orientation.z,
             ]
         )
+        self.last_target_time = time.time()
+
+    def publish(self):
+        # Don't publish if there hasn't been a target in a while
+        if time.time() - self.last_target_time > 0.25:
+            return
+
+        # Don't publish if we haven't seen the target
+        if self.target_position is None:
+            return
+
+
+        if self.mwa_position is None:
+            self.mwa_position = self.target_position
+        self.mwa_position = (
+            self.mwa_decay * self.mwa_position + (1 - self.mwa_decay) * self.target_position
+        )
         self.mwa_orientation = quaternion_slerp(
-            self.mwa_orientation, new_orientation, 1 - self.mwa_decay
+            self.mwa_orientation, self.target_orientation, 1 - self.mwa_decay
         )
 
         # Update the pose message with the filtered position and orientation
+        pose_camera_object = PoseStamped()
+        pose_camera_object.header.frame_id = "camera_link"
+        pose_camera_object.header.stamp = self.get_clock().now().to_msg()
         (
             pose_camera_object.pose.position.x,
             pose_camera_object.pose.position.y,

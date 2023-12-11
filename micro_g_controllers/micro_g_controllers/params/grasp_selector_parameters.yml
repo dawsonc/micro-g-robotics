@@ -19,7 +19,7 @@ grasp_selector:
   }
   output_topic: {
     type: string,
-    default_value: "desired_eef_pose",
+    default_value: "px100/desired_eef_pose",
     read_only: true,
     description: "Name of PoseStamped topic to publish with grasp.",
     validation: {
@@ -29,19 +29,19 @@ grasp_selector:
   offset:
     x: {
       type: double,
-      default_value: -0.02,
+      default_value: -0.05,
       read_only: false,
       description: "X-axis offset from object_pose to desired_eef_pose."
     }
     y: {
       type: double,
-      default_value: 0.0,
+      default_value: -0.01,
       read_only: false,
       description: "Y-axis offset from object_pose to desired_eef_pose."
     }
     z: {
       type: double,
-      default_value: 0.0,
+      default_value: 0.05,
       read_only: false,
       description: "Z-axis offset from object_pose to desired_eef_pose."
     }

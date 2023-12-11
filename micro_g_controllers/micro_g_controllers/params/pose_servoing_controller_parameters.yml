@@ -16,7 +16,7 @@ pose_servoing:
   }
   kp: {
     type: double,
-    default_value: 1.0,
+    default_value: 0.6,
     read_only: false,
     description: "Proportional gain for joint tracking controller",
     validation: {

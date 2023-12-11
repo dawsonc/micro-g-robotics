@@ -41,15 +41,6 @@ def generate_launch_description():
                 executable="grasp_selector",
                 name="grasp_selector_node",
                 output="screen",
-                parameters=[
-                    PathJoinSubstitution(
-                        [
-                            FindPackageShare("micro_g_controllers"),
-                            "config",
-                            "grasp_selector.yml",
-                        ]
-                    )
-                ],
             ),
         ]
     )

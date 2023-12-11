@@ -20,7 +20,7 @@ class pose_servoing:
 
         control_update_rate = 20.0
         moving_time = 0.5
-        kp = 1.0
+        kp = 0.6
         replanning_attempts = 5
         timeout = 1.0
 

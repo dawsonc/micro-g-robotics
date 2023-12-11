@@ -89,6 +89,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         self.last_target_time = time.time()
 
         # Initialize the gripper state
+        self.gripper_open = True
         self.gripper.release(delay=0.0)
 
         # Update the moving time (and set acceleration time to half of moving time)
@@ -257,9 +258,14 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
                 f"No target received in {time.time() - self.last_target_time} s; moving home."
             )
             self.desired_joint_positions = self.home
-            self.gripper.grasp(delay=0.0)
+
+            if self.gripper_open:
+                self.gripper.grasp(delay=0.25)
+                self.gripper_open = False
         else:
-            self.gripper.release(delay=0.0)
+            if not self.gripper_open:
+                self.gripper.release(delay=0.25)
+                self.gripper_open = True
 
         # Track the desired joint positions
         self.arm.capture_joint_positions()
@@ -269,14 +275,16 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         self.arm.set_joint_positions(
             q_setpoint.tolist(),
             blocking=False,
+            moving_time=0.5,
+            accel_time=0.25,
         )
 
     def start_robot(self):
         """Run the controller until ROS triggers a shutdown."""
         try:
-            self.start()
-            executor = MultiThreadedExecutor()
-            rclpy.spin(self.core, executor)
+            self.run()
+            # executor = MultiThreadedExecutor()
+            # rclpy.spin(self.core, executor)
         except KeyboardInterrupt:
             self.shutdown()
 

@@ -1,0 +1,12 @@
+groups:
+  arm:
+    operating_mode: position
+    profile_type: time
+    profile_velocity: 400
+    profile_acceleration: 200
+    torque_enable: true
+
+singles:
+  gripper:
+    operating_mode: pwm
+    torque_enable: true

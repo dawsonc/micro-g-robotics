@@ -20,11 +20,11 @@ class grasp_selector:
 
         target_frame = "world"
         input_topic = "object_pose"
-        output_topic = "desired_eef_pose"
+        output_topic = "px100/desired_eef_pose"
         class __Offset:
-            x = -0.02
-            y = 0.0
-            z = 0.0
+            x = -0.05
+            y = -0.01
+            z = 0.05
         offset = __Offset()
 
 
