@@ -260,11 +260,11 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
             self.desired_joint_positions = self.home
 
             if self.gripper_open:
-                self.gripper.grasp(delay=0.25)
+                self.gripper.grasp(delay=0.3)
                 self.gripper_open = False
         else:
             if not self.gripper_open:
-                self.gripper.release(delay=0.25)
+                self.gripper.release(delay=0.3)
                 self.gripper_open = True
 
         # Track the desired joint positions
