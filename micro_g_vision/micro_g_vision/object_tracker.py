@@ -22,7 +22,7 @@ import numpy as np
 import rclpy
 import transforms3d
 from apriltag_msgs.msg import AprilTagDetectionArray
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 from rcl_interfaces.msg import ParameterDescriptor, ParameterType
 from rclpy.node import Node
 from rclpy.qos import qos_profile_system_default
@@ -63,7 +63,7 @@ class ObjectTrackerNode(Node):
         # The publisher will be used to publish the object position (just 3D position)
         # The TF buffer and listener will be used to transform the object position
         self.publisher = self.create_publisher(
-            PoseStamped, "/object_pose", qos_profile_system_default
+            PoseWithCovarianceStamped, "/object_pose", qos_profile_system_default
         )
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
@@ -73,6 +73,9 @@ class ObjectTrackerNode(Node):
             self.detection_callback,
             qos_profile_system_default,
         )
+
+        # Measurement covariance was tuned empirically
+        self.pose_covariance = 2e-1 * np.eye(6)
 
         self.create_timer(1.0 / 20.0, self.publish)
 
@@ -161,34 +164,57 @@ class ObjectTrackerNode(Node):
         if self.target_position is None:
             return
 
-
         if self.mwa_position is None:
             self.mwa_position = self.target_position
         self.mwa_position = (
-            self.mwa_decay * self.mwa_position + (1 - self.mwa_decay) * self.target_position
+            self.mwa_decay * self.mwa_position
+            + (1 - self.mwa_decay) * self.target_position
         )
         self.mwa_orientation = quaternion_slerp(
             self.mwa_orientation, self.target_orientation, 1 - self.mwa_decay
         )
 
         # Update the pose message with the filtered position and orientation
-        pose_camera_object = PoseStamped()
+        pose_camera_object = PoseWithCovarianceStamped()
         pose_camera_object.header.frame_id = "camera_link"
         pose_camera_object.header.stamp = self.get_clock().now().to_msg()
         (
-            pose_camera_object.pose.position.x,
-            pose_camera_object.pose.position.y,
-            pose_camera_object.pose.position.z,
+            pose_camera_object.pose.pose.position.x,
+            pose_camera_object.pose.pose.position.y,
+            pose_camera_object.pose.pose.position.z,
         ) = self.mwa_position
         (
-            pose_camera_object.pose.orientation.w,
-            pose_camera_object.pose.orientation.x,
-            pose_camera_object.pose.orientation.y,
-            pose_camera_object.pose.orientation.z,
+            pose_camera_object.pose.pose.orientation.w,
+            pose_camera_object.pose.pose.orientation.x,
+            pose_camera_object.pose.pose.orientation.y,
+            pose_camera_object.pose.pose.orientation.z,
         ) = self.mwa_orientation
 
+        # Add covariance
+        pose_camera_object.pose.covariance = self.pose_covariance.flatten()
+
+        # Transform to base frame TODO just for debug
+        try:
+            transform = self.tf_buffer.lookup_transform(
+                "base_tag",
+                "camera_link",
+                rclpy.time.Time(),
+                timeout=rclpy.duration.Duration(seconds=1.0),
+            )
+        except Exception as e:
+            self.get_logger().error(f"Failed to lookup transform: {str(e)}")
+            return
+
+        # Transform to the base frame
+        pose_base_object = PoseWithCovarianceStamped()
+        pose_base_object.header.frame_id = "base_tag"
+        pose_base_object.header.stamp = self.get_clock().now().to_msg()
+        pose_base_object.pose.pose = do_transform_pose(pose_camera_object.pose.pose, transform)
+        pose_base_object.pose.covariance = self.pose_covariance.flatten()
+
         # Publish the object pose
-        self.publisher.publish(pose_camera_object)
+        # self.publisher.publish(pose_camera_object)
+        self.publisher.publish(pose_base_object)
 
 
 def main(args=None):

@@ -20,6 +20,7 @@
 
   <depend>python-transforms3d-pip</depend>
   <depend>rclpy</depend>
+  <depend>robot_localization</depend>
 
   <exec_depend>realsense2_camera</exec_depend>
   <exec_depend>apriltag_ros</exec_depend>

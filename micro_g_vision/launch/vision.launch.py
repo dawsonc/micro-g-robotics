@@ -22,6 +22,8 @@ from launch import LaunchDescription
 from launch.substitutions import PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
+from launch.actions import IncludeLaunchDescription
 
 
 def generate_launch_description():
@@ -78,6 +80,22 @@ def generate_launch_description():
                 name="object_tracker",
                 output="screen",
             ),
+            # Start the EKF node
+            Node(
+                package="robot_localization",
+                executable="ekf_node",
+                name="ekf_filter_node",
+                output="screen",
+                parameters=[
+                    PathJoinSubstitution(
+                        [
+                            FindPackageShare("micro_g_vision"),
+                            "config",
+                            "ekf.yml",
+                        ]
+                    )
+                ],
+            ),
             # Launch the static transform from the robot gantry apriltag to the robot base
             # There doesn't seem to be a good way to put this in a config.
             Node(
@@ -99,8 +117,22 @@ def generate_launch_description():
                     "--frame-id",
                     "gantry_tag",
                     "--child-frame-id",
-                    "world",
+                    "world",  # TODO change to base_link
                 ],
+            ),
+            # Foxglove
+            IncludeLaunchDescription(
+                XMLLaunchDescriptionSource(
+                    [
+                        PathJoinSubstitution(
+                            [
+                                FindPackageShare("foxglove_bridge"),
+                                "launch",
+                                "foxglove_bridge_launch.xml",
+                            ]
+                        )
+                    ]
+                ),
             ),
         ]
     )

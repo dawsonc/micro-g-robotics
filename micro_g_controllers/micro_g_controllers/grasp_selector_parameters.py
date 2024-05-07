@@ -1,3 +1,5 @@
+# flake8: noqa
+
 # auto-generated DO NOT EDIT
 
 from rcl_interfaces.msg import ParameterDescriptor
@@ -31,7 +33,6 @@ class grasp_selector:
 
     class ParamListener:
         def __init__(self, node, prefix=""):
-            node.declare_parameter('my_parameter', 'world')
             self.prefix_ = prefix
             self.params_ = grasp_selector.Params()
             self.node_ = node
@@ -145,19 +146,19 @@ class grasp_selector:
             self.logger_.debug(param.name + ": " + param.type_.name + " = " + str(param.value))
             validation_result = ParameterValidators.not_empty(param)
             if validation_result:
-                raise InvalidParameterValueException('Invalid value set during initialization for parameter target_frame: ' + validation_result)
+                raise InvalidParameterValueException('target_frame',param.value, 'Invalid value set during initialization for parameter target_frame: ' + validation_result)
             updated_params.target_frame = param.value
             param = self.node_.get_parameter(self.prefix_ + "input_topic")
             self.logger_.debug(param.name + ": " + param.type_.name + " = " + str(param.value))
             validation_result = ParameterValidators.not_empty(param)
             if validation_result:
-                raise InvalidParameterValueException('Invalid value set during initialization for parameter input_topic: ' + validation_result)
+                raise InvalidParameterValueException('input_topic',param.value, 'Invalid value set during initialization for parameter input_topic: ' + validation_result)
             updated_params.input_topic = param.value
             param = self.node_.get_parameter(self.prefix_ + "output_topic")
             self.logger_.debug(param.name + ": " + param.type_.name + " = " + str(param.value))
             validation_result = ParameterValidators.not_empty(param)
             if validation_result:
-                raise InvalidParameterValueException('Invalid value set during initialization for parameter output_topic: ' + validation_result)
+                raise InvalidParameterValueException('output_topic',param.value, 'Invalid value set during initialization for parameter output_topic: ' + validation_result)
             updated_params.output_topic = param.value
             param = self.node_.get_parameter(self.prefix_ + "offset.x")
             self.logger_.debug(param.name + ": " + param.type_.name + " = " + str(param.value))

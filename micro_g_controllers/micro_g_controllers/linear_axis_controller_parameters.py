@@ -1,3 +1,5 @@
+# flake8: noqa
+
 # auto-generated DO NOT EDIT
 
 from rcl_interfaces.msg import ParameterDescriptor
@@ -36,7 +38,6 @@ class linear_axis_controller:
 
     class ParamListener:
         def __init__(self, node, prefix=""):
-            node.declare_parameter('my_parameter', 'world')
             self.prefix_ = prefix
             self.params_ = linear_axis_controller.Params()
             self.node_ = node
@@ -195,25 +196,25 @@ class linear_axis_controller:
             self.logger_.debug(param.name + ": " + param.type_.name + " = " + str(param.value))
             validation_result = ParameterValidators.not_empty(param)
             if validation_result:
-                raise InvalidParameterValueException('Invalid value set during initialization for parameter input_topic: ' + validation_result)
+                raise InvalidParameterValueException('input_topic',param.value, 'Invalid value set during initialization for parameter input_topic: ' + validation_result)
             updated_params.input_topic = param.value
             param = self.node_.get_parameter(self.prefix_ + "control_frequency")
             self.logger_.debug(param.name + ": " + param.type_.name + " = " + str(param.value))
             validation_result = ParameterValidators.gt_eq(param, 0.0001)
             if validation_result:
-                raise InvalidParameterValueException('Invalid value set during initialization for parameter control_frequency: ' + validation_result)
+                raise InvalidParameterValueException('control_frequency',param.value, 'Invalid value set during initialization for parameter control_frequency: ' + validation_result)
             updated_params.control_frequency = param.value
             param = self.node_.get_parameter(self.prefix_ + "kp")
             self.logger_.debug(param.name + ": " + param.type_.name + " = " + str(param.value))
             validation_result = ParameterValidators.gt_eq(param, 0.0001)
             if validation_result:
-                raise InvalidParameterValueException('Invalid value set during initialization for parameter kp: ' + validation_result)
+                raise InvalidParameterValueException('kp',param.value, 'Invalid value set during initialization for parameter kp: ' + validation_result)
             updated_params.kp = param.value
             param = self.node_.get_parameter(self.prefix_ + "max_speed")
             self.logger_.debug(param.name + ": " + param.type_.name + " = " + str(param.value))
             validation_result = ParameterValidators.gt_eq(param, 0.0)
             if validation_result:
-                raise InvalidParameterValueException('Invalid value set during initialization for parameter max_speed: ' + validation_result)
+                raise InvalidParameterValueException('max_speed',param.value, 'Invalid value set during initialization for parameter max_speed: ' + validation_result)
             updated_params.max_speed = param.value
             param = self.node_.get_parameter(self.prefix_ + "position_limits.min")
             self.logger_.debug(param.name + ": " + param.type_.name + " = " + str(param.value))
@@ -231,7 +232,7 @@ class linear_axis_controller:
             self.logger_.debug(param.name + ": " + param.type_.name + " = " + str(param.value))
             validation_result = ParameterValidators.gt_eq(param, 0.0)
             if validation_result:
-                raise InvalidParameterValueException('Invalid value set during initialization for parameter command_timeout: ' + validation_result)
+                raise InvalidParameterValueException('command_timeout',param.value, 'Invalid value set during initialization for parameter command_timeout: ' + validation_result)
             updated_params.command_timeout = param.value
 
 

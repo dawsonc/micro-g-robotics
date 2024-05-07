@@ -31,7 +31,8 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "object_tracker=micro_g_vision.object_tracker:main"
+            "object_tracker=micro_g_vision.object_tracker:main",
+            "covariance_measurer=micro_g_vision.covariance_measurer:main"
         ],
     },
 )

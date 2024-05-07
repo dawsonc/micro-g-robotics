@@ -12,13 +12,13 @@ apriltag:                 # node name
       threads: 1          # number of threads
       decimate: 2.0       # decimate resolution for quad detection
       blur: 0.0           # sigma of Gaussian blur for quad detection
-      refine: 1           # snap to strong gradients
+      refine: true           # snap to strong gradients
       sharpening: 0.25    # sharpening of decoded images
-      debug: 0            # write additional debugging images to current working directory
+      debug: true            # write additional debugging images to current working directory
 
     # (optional) list of tags
     # If defined, 'frames' and 'sizes' must have the same length as 'ids'.
     tag:
-      ids:    [0, 1, 2, 3, 4, 5, 6]         # tag IDs for which to publish transform
-      frames: [tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, gantry_tag]   # frame names
-      sizes:  [0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.05]     # tag-specific edge size, overrides the default 'size'
+      ids:    [0, 1, 2, 3, 4, 5, 6, 7]         # tag IDs for which to publish transform
+      frames: [tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, gantry_tag, base_tag]   # frame names
+      sizes:  [0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.05, 0.05]     # tag-specific edge size, overrides the default 'size'

@@ -1,3 +1,5 @@
+# flake8: noqa
+
 # auto-generated DO NOT EDIT
 
 from rcl_interfaces.msg import ParameterDescriptor
@@ -28,7 +30,6 @@ class pose_servoing:
 
     class ParamListener:
         def __init__(self, node, prefix=""):
-            node.declare_parameter('my_parameter', 'world')
             self.prefix_ = prefix
             self.params_ = pose_servoing.Params()
             self.node_ = node
@@ -148,7 +149,7 @@ class pose_servoing:
             self.logger_.debug(param.name + ": " + param.type_.name + " = " + str(param.value))
             validation_result = ParameterValidators.gt_eq(param, 0.0001)
             if validation_result:
-                raise InvalidParameterValueException('Invalid value set during initialization for parameter control_update_rate: ' + validation_result)
+                raise InvalidParameterValueException('control_update_rate',param.value, 'Invalid value set during initialization for parameter control_update_rate: ' + validation_result)
             updated_params.control_update_rate = param.value
             param = self.node_.get_parameter(self.prefix_ + "moving_time")
             self.logger_.debug(param.name + ": " + param.type_.name + " = " + str(param.value))
@@ -157,19 +158,19 @@ class pose_servoing:
             self.logger_.debug(param.name + ": " + param.type_.name + " = " + str(param.value))
             validation_result = ParameterValidators.gt_eq(param, 0.0001)
             if validation_result:
-                raise InvalidParameterValueException('Invalid value set during initialization for parameter kp: ' + validation_result)
+                raise InvalidParameterValueException('kp',param.value, 'Invalid value set during initialization for parameter kp: ' + validation_result)
             updated_params.kp = param.value
             param = self.node_.get_parameter(self.prefix_ + "replanning_attempts")
             self.logger_.debug(param.name + ": " + param.type_.name + " = " + str(param.value))
             validation_result = ParameterValidators.gt_eq(param, 0)
             if validation_result:
-                raise InvalidParameterValueException('Invalid value set during initialization for parameter replanning_attempts: ' + validation_result)
+                raise InvalidParameterValueException('replanning_attempts',param.value, 'Invalid value set during initialization for parameter replanning_attempts: ' + validation_result)
             updated_params.replanning_attempts = param.value
             param = self.node_.get_parameter(self.prefix_ + "timeout")
             self.logger_.debug(param.name + ": " + param.type_.name + " = " + str(param.value))
             validation_result = ParameterValidators.gt_eq(param, 0.0001)
             if validation_result:
-                raise InvalidParameterValueException('Invalid value set during initialization for parameter timeout: ' + validation_result)
+                raise InvalidParameterValueException('timeout',param.value, 'Invalid value set during initialization for parameter timeout: ' + validation_result)
             updated_params.timeout = param.value
 
 
