@@ -8,8 +8,12 @@ package_name = "micro_g_controllers"
 
 # Generate parameter libraries
 generate_parameter_module(
-    "grasp_selector_parameters",
-    "micro_g_controllers/params/grasp_selector_parameters.yml",
+    "grasp_selector_basic_parameters",
+    "micro_g_controllers/params/grasp_selector_basic_parameters.yml",
+)
+generate_parameter_module(
+    "grasp_selector_predictive_parameters",
+    "micro_g_controllers/params/grasp_selector_predictive_parameters.yml",
 )
 generate_parameter_module(
     "linear_axis_controller_parameters",
@@ -18,6 +22,10 @@ generate_parameter_module(
 generate_parameter_module(
     "pose_servoing_controller_parameters",
     "micro_g_controllers/params/pose_servoing_controller_parameters.yml",
+)
+generate_parameter_module(
+    "whole_body_controller_parameters",
+    "micro_g_controllers/params/whole_body_controller_parameters.yml",
 )
 
 setup(
@@ -43,8 +51,10 @@ setup(
     entry_points={
         "console_scripts": [
             "pose_servoing_controller=micro_g_controllers.pose_servoing_controller:main",
+            "whole_body_controller=micro_g_controllers.whole_body_controller:main",
             "linear_axis_controller=micro_g_controllers.linear_axis_controller:main",
-            "grasp_selector=micro_g_controllers.grasp_selector:main",
+            "grasp_selector_basic=micro_g_controllers.grasp_selector_basic:main",
+            "grasp_selector_predictive=micro_g_controllers.grasp_selector_predictive:main",
         ],
     },
 )

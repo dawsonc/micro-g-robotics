@@ -38,7 +38,7 @@ def generate_launch_description():
             # Launch elements for the grasp selector
             Node(
                 package="micro_g_controllers",
-                executable="grasp_selector",
+                executable="grasp_selector_predictive",
                 name="grasp_selector_node",
                 output="screen",
             ),

@@ -1,0 +1,128 @@
+wbc:
+  control_update_rate: {
+    type: double,
+    default_value: 30.0,
+    read_only: true,
+    description: "Control update rate in Hz",
+    validation: {
+      gt_eq<>: [ 0.0001 ],
+    }
+  }
+  moving_time: {
+    type: double,
+    default_value: 0.5,
+    read_only: false,
+    description: "Moving time in seconds"
+  }
+  arm_kp: {
+    type: double,
+    default_value: 1.0,
+    read_only: false,
+    description: "Proportional gain for diff IK tracking controller",
+    validation: {
+      gt_eq<>: [ 0.0001 ],
+    }
+  }
+  linear_stage_kp: {
+    type: double,
+    default_value: 0.8,
+    read_only: false,
+    description: "Proportional gain for linear stage controller",
+    validation: {
+      gt_eq<>: [ 0.0001 ],
+    }
+  }
+  replanning_attempts: {
+    type: int,
+    default_value: 5,
+    read_only: false,
+    description: "Number of times to attempt re-planning",
+    validation: {
+      gt_eq<>: [ 0 ],
+    }
+  }
+  timeout: {
+    type: double,
+    default_value: 1.0,
+    read_only: false,
+    description: "Wait this long after getting a target before moving home (s)",
+    validation: {
+      gt_eq<>: [ 0.0001 ],
+    }
+  }
+  workspace_limits:
+    x:
+      min: {
+        type: double,
+        default_value: -0.05,
+        read_only: false,
+        description: "Minimum x of workspace (in robot base frame)."
+      }
+      max: {
+        type: double,
+        default_value: 0.15,
+        read_only: false,
+        description: "Maximum x of workspace (in robot base frame)."
+      }
+    z:
+      min: {
+        type: double,
+        default_value: 0.15,
+        read_only: false,
+        description: "Minimum z of workspace (in robot base frame)."
+      }
+      max: {
+        type: double,
+        default_value: 0.3,
+        read_only: false,
+        description: "Maximum z of workspace (in robot base frame)."
+      }
+    yaw:
+      min: {
+        type: double,
+        default_value: -1.57,
+        read_only: false,
+        description: "Minimum yaw of workspace (in base_tag frame)."
+      }
+      max: {
+        type: double,
+        default_value: 1.57,
+        read_only: false,
+        description: "Maximum yaw of workspace (in base_tag frame)."
+      }
+  linear_stage_limits:
+    x:
+      min: {
+        type: double,
+        default_value: -0.25,
+        read_only: false,
+        description: "Minimum x of workspace (in robot base frame)."
+      }
+      max: {
+        type: double,
+        default_value: -0.08,
+        read_only: false,
+        description: "Maximum x of workspace (in robot base frame)."
+      }
+    speed: {
+      type: double,
+      default_value: 0.75,
+      read_only: false,
+      description: "Max speed (m/s)",
+      validation: {
+        gt_eq<>: [ 0.0 ],
+      }
+    }
+    acceleration:
+      min: {
+        type: int,
+        default_value: -1000000,
+        read_only: false,
+        description: "Min stepper motor acceleration (pulses)"
+      }
+      max: {
+        type: int,
+        default_value: 1000000,
+        read_only: false,
+        description: "Max stepper motor acceleration (pulses)"
+      }

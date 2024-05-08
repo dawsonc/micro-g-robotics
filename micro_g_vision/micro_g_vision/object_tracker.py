@@ -18,10 +18,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 import time
+from collections import deque
 import numpy as np
 import rclpy
 import transforms3d
+from std_msgs.msg import Float32
 from apriltag_msgs.msg import AprilTagDetectionArray
+from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 from rcl_interfaces.msg import ParameterDescriptor, ParameterType
 from rclpy.node import Node
@@ -54,6 +57,7 @@ class ObjectTrackerNode(Node):
         self.mwa_decay = self.get_parameter("mwa_decay").value
         self.mwa_position = None
         self.mwa_orientation = np.array([1.0, 0.0, 0.0, 0.0])  # w x y z
+        self.position_history = deque(maxlen=5)
         self.target_position = None
         self.last_target_time = time.time()
 
@@ -74,8 +78,19 @@ class ObjectTrackerNode(Node):
             qos_profile_system_default,
         )
 
+        # Also create a publisher for the time since we last saw the target
+        self.target_time_publisher = self.create_publisher(
+            Float32, "/time_since_last_seen", qos_profile_system_default
+        )
+
         # Measurement covariance was tuned empirically
-        self.pose_covariance = 2e-1 * np.eye(6)
+        self.pose_covariance = 1e-3 * np.eye(6)
+
+        # We're also going to fake out the Odometry here (circumvent the EKF since
+        # that wasn't giving great velocity estimates)
+        self.odom_publisher = self.create_publisher(
+            Odometry, "/odometry/filtered", qos_profile_system_default
+        )
 
         self.create_timer(1.0 / 20.0, self.publish)
 
@@ -157,13 +172,16 @@ class ObjectTrackerNode(Node):
 
     def publish(self):
         # Don't publish if there hasn't been a target in a while
-        if time.time() - self.last_target_time > 0.25:
+        time_since_last_seen = time.time() - self.last_target_time
+        self.target_time_publisher.publish(Float32(data=time_since_last_seen))
+        if time_since_last_seen > 0.25:
             return
 
         # Don't publish if we haven't seen the target
         if self.target_position is None:
             return
 
+        # Update the two filters
         if self.mwa_position is None:
             self.mwa_position = self.target_position
         self.mwa_position = (
@@ -173,6 +191,9 @@ class ObjectTrackerNode(Node):
         self.mwa_orientation = quaternion_slerp(
             self.mwa_orientation, self.target_orientation, 1 - self.mwa_decay
         )
+
+        # Update the history
+        self.position_history.append(self.mwa_position)
 
         # Update the pose message with the filtered position and orientation
         pose_camera_object = PoseWithCovarianceStamped()
@@ -209,11 +230,29 @@ class ObjectTrackerNode(Node):
         pose_base_object = PoseWithCovarianceStamped()
         pose_base_object.header.frame_id = "base_tag"
         pose_base_object.header.stamp = self.get_clock().now().to_msg()
-        pose_base_object.pose.pose = do_transform_pose(pose_camera_object.pose.pose, transform)
+        pose_base_object.pose.pose = do_transform_pose(
+            pose_camera_object.pose.pose, transform
+        )
         pose_base_object.pose.covariance = self.pose_covariance.flatten()
 
         # Publish the object pose
         self.publisher.publish(pose_base_object)
+
+        # # Estimate the linear velocity and publish odometry
+        # linear_velocity = (
+        #     self.mwa_position - self.position_history[0]
+        # ) / (len(self.position_history) * 1 / 20.0)
+        # linear_velocity = np.clip(linear_velocity, -0.1, 0.1)
+
+        # odom = Odometry()
+        # odom.header.frame_id = "base_tag"
+        # odom.header.stamp = self.get_clock().now().to_msg()
+        # odom.pose = pose_base_object.pose
+        # odom.twist.twist.linear.x = linear_velocity[0]
+        # odom.twist.twist.linear.y = linear_velocity[1]
+        # odom.twist.twist.linear.z = linear_velocity[2]
+
+        # self.odom_publisher.publish(odom)
 
 
 def main(args=None):

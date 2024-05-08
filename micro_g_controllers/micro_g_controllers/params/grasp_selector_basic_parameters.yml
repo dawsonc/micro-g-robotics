@@ -12,7 +12,7 @@ grasp_selector:
     type: string,
     default_value: "object_pose",
     read_only: true,
-    description: "Name of PoseStamped topic with the object pose.",
+    description: "Name of Odometry topic tracking the object.",
     validation: {
       not_empty<>: null
     }
@@ -25,6 +25,12 @@ grasp_selector:
     validation: {
       not_empty<>: null
     }
+  }
+  max_time_since_last_seen: {
+    type: double,
+    default_value: 1.0,
+    read_only: false,
+    description: "Don't try to grasp objects that are more stale than this value."
   }
   offset:
     x: {

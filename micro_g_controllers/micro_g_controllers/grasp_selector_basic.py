@@ -19,14 +19,16 @@
 # THE SOFTWARE.
 import rclpy
 import tf2_ros
+from std_msgs.msg import Float32
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
+from nav_msgs.msg import Odometry
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from tf2_geometry_msgs import do_transform_pose
 from tf2_ros import Buffer, TransformListener
 
-from micro_g_controllers.grasp_selector_parameters import grasp_selector
+from micro_g_controllers.grasp_selector_basic_parameters import grasp_selector
 
 
 class GraspSelectorNode(Node):
@@ -47,6 +49,9 @@ class GraspSelectorNode(Node):
         self.subscription = self.create_subscription(
             PoseWithCovarianceStamped, self.params.input_topic, self.object_pose_callback, 10
         )
+        self.time_since_last_seen_sub = self.create_subscription(
+            Float32, "/time_since_last_seen", self.time_since_last_seen_callback, 10
+        )
         self.publisher = self.create_publisher(
             PoseStamped, self.params.output_topic, 10
         )
@@ -60,7 +65,18 @@ class GraspSelectorNode(Node):
             self.param_listener.refresh_dynamic_parameters()
             self.params = self.param_listener.get_params()
 
+    def time_since_last_seen_callback(self, msg):
+        self.time_since_target_last_seen = msg.data
+
     def object_pose_callback(self, object_pose):
+        # Skip if stale
+        if self.time_since_target_last_seen > self.params.max_time_since_last_seen:
+            self.get_logger().warn(
+                f"Skipping object pose callback, time since last seen: "
+                f"{self.time_since_target_last_seen}"
+            )
+            return
+
         try:
             # Transform the object pose into the world frame
             transform = self.tf_buffer.lookup_transform(

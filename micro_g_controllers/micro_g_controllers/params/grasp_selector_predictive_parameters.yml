@@ -1,0 +1,74 @@
+grasp_selector:
+  target_frame: {
+    type: string,
+    default_value: "base_tag",
+    read_only: true,
+    description: "Name of TF frame that grasp should be expressed in.",
+    validation: {
+      not_empty<>: null
+    }
+  }
+  input_topic: {
+    type: string,
+    default_value: "odometry/filtered",
+    read_only: true,
+    description: "Name of Odometry topic tracking the object.",
+    validation: {
+      not_empty<>: null
+    }
+  }
+  output_pose_topic: {
+    type: string,
+    default_value: "px100/desired_eef_pose",
+    read_only: true,
+    description: "Name of PoseStamped topic to publish with grasp pose.",
+    validation: {
+      not_empty<>: null
+    }
+  }
+  output_grasp_topic: {
+    type: string,
+    default_value: "px100/grasp",
+    read_only: true,
+    description: "Name of Bool topic to publish with flag on whether we should be grasping.",
+    validation: {
+      not_empty<>: null
+    }
+  }
+  max_time_since_last_seen: {
+    type: double,
+    default_value: 1.0,
+    read_only: false,
+    description: "Don't try to grasp objects that are more stale than this value."
+  }
+  grasp_lead_time: {
+    type: double,
+    default_value: 0.2,
+    read_only: false,
+    description: "Close the gripper this many seconds before intercept."
+  }
+  desired_grasp_y: {
+    type: double,
+    default_value: 0.05,
+    read_only: false,
+    description: "Y coordinate (in target frame) where we should try to grab the object."
+  }
+  offset:
+    x: {
+      type: double,
+      default_value: 0.0,
+      read_only: false,
+      description: "X-axis offset from object_pose to desired_eef_pose."
+    }
+    y: {
+      type: double,
+      default_value: 0.0,
+      read_only: false,
+      description: "Y-axis offset from object_pose to desired_eef_pose."
+    }
+    z: {
+      type: double,
+      default_value: 0.0,
+      read_only: false,
+      description: "Z-axis offset from object_pose to desired_eef_pose."
+    }

@@ -20,25 +20,35 @@
 import argparse
 import sys
 import time
+from collections import namedtuple
 
 import modern_robotics as mr
 import numpy as np
 import tf2_ros
 import transforms3d
 from geometry_msgs.msg import PoseStamped
+from std_msgs.msg import Bool
 from interbotix_common_modules.angle_manipulation import angle_manipulation as ang
 from interbotix_xs_modules.xs_robot.arm import InterbotixManipulatorXS
+import rclpy
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.qos import qos_profile_system_default
 from rclpy.utilities import remove_ros_args
 from tf2_geometry_msgs import do_transform_pose
+from ticlib import TicUSB
 
-from micro_g_controllers.pose_servoing_controller_parameters import (
-    pose_servoing,
+from micro_g_controllers.whole_body_controller_parameters import (
+    wbc,
+)
+from micro_g_controllers.linear_axis_controller import (
+    meters_per_second_to_microsteps_per_10k_seconds,
 )
 
+# Make a container that holds some of the command information that the controller uses
+LinearStageCommand = namedtuple("Command", ["command", "stamp"])
 
-class XSArmPoseServoingController(InterbotixManipulatorXS):
+
+class WholeBodyController(InterbotixManipulatorXS):
     """Tracks a published end effector pose."""
 
     def __init__(
@@ -73,11 +83,11 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
             moving_time=moving_time,
             accel_time=moving_time / 2.0,
             args=xs_args,
-            node_name="pose_servoing",
+            node_name="wbc",
         )
 
         # Setup the node parameters
-        self.param_listener = pose_servoing.ParamListener(self.core)
+        self.param_listener = wbc.ParamListener(self.core)
         self.params = self.param_listener.get_params()
         self.core.create_timer(
             1, self.update_parameters_callback, MutuallyExclusiveCallbackGroup()
@@ -102,16 +112,19 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         #   - b = end effector body frame (tool frame)
         #   - d = desired frame for the end effector
         self.T_sy = np.eye(4)
+        self.T_sd = None
         self.update_frames()
-
-        # Define the joints to track
-        self.desired_joint_positions = self.home
 
         # Initialize the tf2 buffer and listener
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self.core)
         # Set the target frame for transformation
         self.target_frame = f"{robot_name}/base_link"
+
+        # Create the interface to the motor and configure it
+        self.tic = self.configure_tic()
+        self.tic.set_target_velocity(0)
+        self.linear_stage_command = LinearStageCommand(0, time.time())
 
         # Create a subscription to the pose that we will track
         self.core.create_subscription(
@@ -120,10 +133,34 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
             self.desired_pose_callback,
             qos_profile_system_default,
         )
+        self.core.create_subscription(
+            Bool,
+            "grasp",
+            self.grasp_object_callback,
+            qos_profile_system_default,
+        )
         self.core.get_logger().info("Ready to receive servoing commands.")
 
         # Set the controller update rate
         self.core.create_timer(1.0 / self.params.control_update_rate, self.update)
+
+    def configure_tic(self) -> TicUSB:
+        """Initialize and configure the Tic motor driver."""
+        tic = TicUSB()
+
+        tic.energize()
+        tic.exit_safe_start()
+        tic.set_max_speed(
+            meters_per_second_to_microsteps_per_10k_seconds(
+                self.params.linear_stage_limits.speed
+            )
+        )
+        tic.halt_and_set_position(-100)
+
+        tic.set_max_acceleration(self.params.linear_stage_limits.acceleration.max)
+        tic.set_max_deceleration(self.params.linear_stage_limits.acceleration.min)
+
+        return tic
 
     def update_frames(self):
         """
@@ -146,6 +183,15 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
                 self.params.moving_time, self.params.moving_time / 2.0
             )
 
+    def grasp_object_callback(self, msg: Bool):
+        """Callback for the grasp subscriber."""
+        if msg.data:
+            self.gripper.grasp(delay=0.3)
+            self.gripper_open = False
+        else:
+            self.gripper.release(delay=0.3)
+            self.gripper_open = True
+
     def desired_pose_callback(self, msg: PoseStamped):
         """
         Process a desired pose.
@@ -159,7 +205,7 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
         try:
             # Lookup the transform from the source frame to target frame
             transform = self.tf_buffer.lookup_transform(
-                self.target_frame, msg.header.frame_id, msg.header.stamp
+                self.target_frame, msg.header.frame_id, rclpy.time.Time()
             )
 
             # Transform the pose using the received transform
@@ -172,110 +218,200 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
             )
 
             # Save the position and orientation into the homogeneous transform
-            T_sd = np.eye(4)
-            T_sd[:3, :3] = orientation
-            T_sd[:3, 3] = position
-            self.core.get_logger().debug(f"Received new desired pose T_sd:\n{T_sd}")
+            self.T_sd = np.eye(4)
+            self.T_sd[:3, :3] = orientation
+            self.T_sd[:3, 3] = position
+            self.core.get_logger().debug(
+                f"Received new desired pose T_sd:\n{self.T_sd}"
+            )
+            self.last_target_time = time.time()
 
-            # Project the pose into the plane of the arm by zeroing the y coordinate
-            self.update_frames()
-            T_ys = np.linalg.inv(self.T_sy)
-            T_yd = np.dot(T_ys, T_sd)
-            y_distance = T_yd[1, 3]
-            T_yd[1, 3] = 0.0
-            T_sd = np.dot(self.T_sy, T_yd)
+            self.core.get_logger().debug(f"""-----
+Received pose summary
 
-            # If the target is too far away along the y axis, wait for the linear axis
-            # controller to move the robot closer
-            if abs(y_distance) > 0.01:
-                self.core.get_logger().warn(
-                    f"Target is too far away along y axis ({y_distance} m)."
-                )
-                self.desired_joint_positions = self.home
-                return
-
-            # Solve IK to get the joint angles that track this pose
-            theta_list, success = self.get_joints_for_eef_pose(T_sd)
-            if not success:
-                self.core.get_logger().warn("Desired pose not reachable!")
-            else:
-                self.desired_joint_positions = theta_list
-                self.last_target_time = time.time()
+target frame: {self.target_frame}
+source frame: {msg.header.frame_id}
+received_pose: {msg}
+transformed: {transformed_pose}
+T_sd:
+{self.T_sd}
+""")
 
         except Exception as e:
             self.core.get_logger().error(
                 f"Error transforming pose to {self.target_frame}: {e}"
             )
-            raise (e)
-
-    def get_joints_for_eef_pose(self, T_sd):
-        """Use IK to get joint angles that achieve the desired end effector pose."""
-        # Generate a list of initial guesses around the current joint angles
-        self.arm.capture_joint_positions()
-        joint_angles = np.array(self.arm.get_joint_commands())
-        initial_guesses = np.random.normal(
-            joint_angles,
-            scale=np.pi / 3.0,
-            size=(self.params.replanning_attempts, joint_angles.size),
-        )
-        # Start with the current joint angles as the first guess
-        initial_guesses = np.vstack([joint_angles, initial_guesses])
-
-        # Try each initial guess until we find one that works or run out of guesses
-        for initial_guess in initial_guesses:
-            # Manually do this rather than calling set_ee_pose_matrix so that we can
-            # manually set the angular and linear error tolerances
-            theta_list, success = mr.IKinSpace(
-                Slist=self.arm.robot_des.Slist,
-                M=self.arm.robot_des.M,
-                T=T_sd,
-                thetalist0=initial_guess,
-                eomg=0.1,
-                ev=0.001,
-            )
-            success = True
-
-            # Check to make sure a solution was found and that no joint limits were violated
-            if success:
-                theta_list = self.arm._wrap_theta_list(theta_list)
-                success = self.arm._check_joint_limits(theta_list)
-            else:
-                success = False
-
-            # If we found a solution, return it; otherwise keep searching
-            if success:
-                return theta_list, success
-
-        return None, False
+            return
 
     def update(self):
         """Run the controller and send commands to the robot."""
         # If we haven't received a target in a while, move home
-        if time.time() - self.last_target_time > self.params.timeout:
+        if (
+            time.time() - self.last_target_time > self.params.timeout
+            or self.T_sd is None
+        ):
             self.core.get_logger().debug(
                 f"No target received in {time.time() - self.last_target_time} s; moving home."
             )
-            self.desired_joint_positions = self.home
 
             if self.gripper_open:
                 self.gripper.grasp(delay=0.3)
                 self.gripper_open = False
+
+            self.arm.set_joint_positions(
+                self.home,
+                blocking=False,
+                moving_time=0.5,
+                accel_time=0.25,
+            )
+
+            self.tic.set_target_velocity(0)
+
+            return
         else:
             if not self.gripper_open:
                 self.gripper.release(delay=0.3)
                 self.gripper_open = True
 
-        # Track the desired joint positions
-        self.arm.capture_joint_positions()
-        q_current = np.array(self.arm.get_joint_commands())
-        q_desired = np.array(self.desired_joint_positions)
-        q_setpoint = q_current + (q_desired - q_current) * self.params.kp
+        # Get the current end effector pose, then get the linear and angular error
+        T_sb = self.arm.get_ee_pose()
+        euler_current = np.array(ang.rotation_matrix_to_euler_angles(T_sb[:3, :3]))
+        position_current = T_sb[:3, 3]
+
+        euler_desired = np.array(ang.rotation_matrix_to_euler_angles(self.T_sd[:3, :3]))
+        position_desired = self.T_sd[:3, 3]
+
+        # Box the desired position and rotation into the workspace
+        position_desired[0] = np.clip(
+            position_desired[0],
+            self.params.workspace_limits.x.min,
+            self.params.workspace_limits.x.max,
+        )
+        position_desired[2] = np.clip(
+            position_desired[2],
+            self.params.workspace_limits.z.min,
+            self.params.workspace_limits.z.max,
+        )
+        euler_desired[-1] = np.clip(
+            euler_desired[-1],
+            self.params.workspace_limits.yaw.min,
+            self.params.workspace_limits.yaw.max,
+        )
+
+        # Compute linear and rotational errors
+        position_error = position_desired - position_current
+        euler_error = euler_desired - euler_current
+
+        # Linear stage update (track y coordinate of error)
+        self.linear_stage_controller(position_error[1])
+
+        # Arm control (don't track y error)
+        position_error[1] = 0
+        self.core.get_logger().debug(f"""
+---------------------------------------
+Diff IK summary
+
+Current position: {position_current}
+Desired position: {position_desired}
+Position error: {position_error}
+
+Current orientation: {euler_current}
+Desired orientation: {euler_desired}
+Orientation error: {euler_error}
+""")
+        self.arm_controller(position_error, euler_error)
+
+    def arm_controller(self, position_error, euler_error):
+        """Diff IK control law for arm."""
+        # Compute the twist in space frame
+        twist = np.zeros(6)
+        twist[3:] = position_error
+        twist[:3] = euler_error
+        twist *= self.params.arm_kp
+
+        # Compute the Jacobian
+        # self.arm.capture_joint_positions()
+        joint_angles = np.array(self.arm.get_joint_commands())
+        J = mr.JacobianSpace(Slist=self.arm.robot_des.Slist, thetalist=joint_angles)
+
+        # Get the joint velocities
+        joint_velocities = np.dot(np.linalg.pinv(J), twist)
+
+        self.core.get_logger().debug(f"""
+Jacobian:
+{J}
+
+Jinv:
+{np.linalg.pinv(J).round(2)}
+
+Twist: {twist}
+joint_velocities: {joint_velocities}
+""")
+
+        # Update the joint positions
+        desired_joint_positions = (
+            joint_angles + joint_velocities / self.params.control_update_rate
+        )
+
         self.arm.set_joint_positions(
-            q_setpoint.tolist(),
+            desired_joint_positions,
             blocking=False,
             moving_time=0.5,
             accel_time=0.25,
         )
+
+    def linear_stage_controller(self, linear_error):
+        """Control law for linear stage to track the desired position."""
+        # First, make sure the linear stage is within the boundaries
+        try:
+            transform = self.tf_buffer.lookup_transform(
+                "base_tag",
+                "world",
+                rclpy.time.Time(),
+            )
+        except Exception as _:
+            self.core.get_logger().info("Could not get gantry transform")
+            return None
+
+        current_base_position = transform.transform.translation
+        current_base_x = current_base_position.x
+
+        if current_base_x < self.params.linear_stage_limits.x.min:
+            linear_error = self.params.linear_stage_limits.x.min - current_base_x
+            self.core.get_logger().warning(
+                f"Current position {current_base_x} is below min position"
+                f" {self.params.linear_stage_limits.x.min}"
+            )
+        elif current_base_x > self.params.linear_stage_limits.x.max:
+            linear_error = self.params.linear_stage_limits.x.max - current_base_x
+            self.core.get_logger().warning(
+                f"Current position {current_base_x} is above max position"
+                f" {self.params.linear_stage_limits.x.max}"
+            )
+
+        # Compute the velocity command based on the error
+        speed_command = -self.params.linear_stage_kp * linear_error
+        speed_command = max(
+            min(speed_command, self.params.linear_stage_limits.speed),
+            -self.params.linear_stage_limits.speed,
+        )
+
+        # Send the command to the motor
+        speed_command_usteps_per_second = (
+            meters_per_second_to_microsteps_per_10k_seconds(speed_command)
+        )
+        self.core.get_logger().debug(
+            f"Speed command: {speed_command} ({speed_command_usteps_per_second}"
+            " usteps/10ks)"
+        )
+        self.tic.set_target_velocity(speed_command_usteps_per_second)
+
+    def shutdown(self):
+        """De-energize the stepper motor and enter safe start"""
+        self.core.get_logger().info("Shutting down linear stage.")
+        self.tic.deenergize()
+        self.tic.enter_safe_start()
+        super().shutdown()
 
     def start_robot(self):
         """Run the controller until ROS triggers a shutdown."""
@@ -284,6 +420,8 @@ class XSArmPoseServoingController(InterbotixManipulatorXS):
             # executor = MultiThreadedExecutor()
             # rclpy.spin(self.core, executor)
         except KeyboardInterrupt:
+            self.shutdown()
+        finally:
             self.shutdown()
 
 
@@ -297,8 +435,10 @@ def main():
     command_line_args = remove_ros_args(args=sys.argv)[1:]
     ros_args = p.parse_args(command_line_args)
 
-    bot = XSArmPoseServoingController(ros_args.robot_model, ros_args.robot_name)
+    bot = WholeBodyController(ros_args.robot_model, ros_args.robot_name)
     bot.start_robot()
+
+    bot.shutdown()
 
 
 if __name__ == "__main__":

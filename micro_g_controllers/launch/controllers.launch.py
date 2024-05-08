@@ -42,10 +42,29 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "robot_name", default_value="px100", description="Robot name"
             ),
+            # Node(
+            #     package="micro_g_controllers",
+            #     executable="pose_servoing_controller",
+            #     name="pose_servoing_controller_node",
+            #     output="log",
+            #     arguments=[
+            #         "--robot_model",
+            #         LaunchConfiguration("robot_model"),
+            #         "--robot_name",
+            #         LaunchConfiguration("robot_name"),
+            #     ],
+            # ),
+            # # Launch elements for the gantry controller
+            # Node(
+            #     package="micro_g_controllers",
+            #     executable="linear_axis_controller",
+            #     name="linear_axis_controller_node",
+            #     output="screen",
+            # ),
             Node(
                 package="micro_g_controllers",
-                executable="pose_servoing_controller",
-                name="pose_servoing_controller_node",
+                executable="whole_body_controller",
+                name="whole_body_controller_node",
                 output="log",
                 arguments=[
                     "--robot_model",
@@ -53,13 +72,6 @@ def generate_launch_description():
                     "--robot_name",
                     LaunchConfiguration("robot_name"),
                 ],
-            ),
-            # Launch elements for the gantry controller
-            Node(
-                package="micro_g_controllers",
-                executable="linear_axis_controller",
-                name="linear_axis_controller_node",
-                output="screen",
             ),
         ]
     )
