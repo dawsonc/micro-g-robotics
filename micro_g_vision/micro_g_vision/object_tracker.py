@@ -193,7 +193,7 @@ class ObjectTrackerNode(Node):
         # Add covariance
         pose_camera_object.pose.covariance = self.pose_covariance.flatten()
 
-        # Transform to base frame TODO just for debug
+        # Transform to base frame
         try:
             transform = self.tf_buffer.lookup_transform(
                 "base_tag",
@@ -213,7 +213,6 @@ class ObjectTrackerNode(Node):
         pose_base_object.pose.covariance = self.pose_covariance.flatten()
 
         # Publish the object pose
-        # self.publisher.publish(pose_camera_object)
         self.publisher.publish(pose_base_object)
 
 

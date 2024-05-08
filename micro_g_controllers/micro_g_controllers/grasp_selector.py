@@ -78,7 +78,7 @@ class GraspSelectorNode(Node):
 
             # Create a pose with a fixed orientation aligned with the world frame
             desired_pose = PoseStamped()
-            desired_pose.header.frame_id = "world"
+            desired_pose.header.frame_id = self.params.target_frame
             desired_pose.header.stamp = object_pose.header.stamp
             desired_pose.pose.position.x = (
                 object_pose_world.position.x + self.params.offset.x
