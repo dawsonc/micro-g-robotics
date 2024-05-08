@@ -19,7 +19,7 @@
 # THE SOFTWARE.
 import rclpy
 import tf2_ros
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
@@ -45,7 +45,7 @@ class GraspSelectorNode(Node):
             f" {self.params.output_topic}"
         )
         self.subscription = self.create_subscription(
-            PoseStamped, self.params.input_topic, self.object_pose_callback, 10
+            PoseWithCovarianceStamped, self.params.input_topic, self.object_pose_callback, 10
         )
         self.publisher = self.create_publisher(
             PoseStamped, self.params.output_topic, 10
@@ -68,7 +68,7 @@ class GraspSelectorNode(Node):
                 object_pose.header.frame_id,
                 rclpy.time.Time(),
             )
-            object_pose_world = do_transform_pose(object_pose.pose, transform)
+            object_pose_world = do_transform_pose(object_pose.pose.pose, transform)
             self.get_logger().debug(
                 f"Object pose in {object_pose.header.frame_id}: {object_pose.pose}"
             )

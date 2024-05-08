@@ -80,6 +80,8 @@ RUN sudo apt-get -q update \
     && sudo apt-get clean -y \
     && sudo rm -rf /var/lib/apt/lists/*
 RUN /bin/bash $USER_WORKSPACE/src/interbotix_ros_manipulators/interbotix_ros_xsarms/install/amd64/xsarm_amd64_install.sh -d humble -p $USER_WORKSPACE -n
+WORKDIR $USER_WORKSPACE/src/interbotix_ros_toolboxes
+RUN git checkout 854508352671992315cc86839e9996b2c83c50b3
 
 # Install stepper driver (also requires udev)
 RUN curl -LO https://www.pololu.com/file/0J1348/pololu-tic-1.8.1-linux-x86.tar.xz \
