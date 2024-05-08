@@ -17,6 +17,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
+from collections import deque
+
 import rclpy
 import tf2_ros
 from std_msgs.msg import Float32, Bool
@@ -28,6 +30,7 @@ from rclpy.node import Node
 from tf2_geometry_msgs import do_transform_pose, do_transform_vector3
 from tf2_ros import Buffer, TransformListener
 import numpy as np
+from numpy.polynomial.polynomial import Polynomial as Poly
 
 from micro_g_controllers.grasp_selector_predictive_parameters import grasp_selector
 
@@ -43,6 +46,7 @@ class GraspSelectorNode(Node):
         )
 
         self.time_since_target_last_seen = self.params.max_time_since_last_seen
+        self.target_position_history = deque(maxlen=self.params.window_length)
 
         # Declare subscriptions and publications
         self.get_logger().info(
@@ -81,6 +85,7 @@ class GraspSelectorNode(Node):
                 f"Skipping object pose callback, time since last seen: "
                 f"{self.time_since_target_last_seen}"
             )
+            self.target_position_history.clear()
             return
 
         # Extract the current pose and velocity of the object
@@ -122,54 +127,71 @@ class GraspSelectorNode(Node):
         ) as e:
             self.get_logger().error(f"Transform lookup failed: {str(e)}")
 
-        # TODO overwrite unreliable velocity estimate
-        object_velocity_world.x = 0.0
-        object_velocity_world.y = 0.05
-        object_velocity_world.z = 0.0
+        # Save the object pose in the history
+        current_t = object_pose.header.stamp.secs + object_pose.header.stamp.nanosecs * 1e-9
+        self.target_position_history.append(
+            np.array(
+                [
+                    current_t,
+                    object_pose_world.position.x,
+                    object_pose_world.position.y,
+                    object_pose_world.position.z,
+                ]
+            )
+        )
 
-        # Get the time at which the object should reach the desired y position
-        planned_grasp_time = (
-            self.params.desired_grasp_y - object_pose_world.position.y
-        ) / (object_velocity_world.y)
-        self.get_logger().info(f"Current y {object_pose_world.position.y}, desired {self.params.desired_grasp_y}, velocity {object_velocity_world.y} planned grasp time: {planned_grasp_time}")
+        # Wait until the history is full before making a prediction
+        if len(self.target_position_history) < self.params.window_length:
+            self.get_logger().info(
+                f"Waiting for history to fill {len(self.target_position_history)} / {self.params.window_length}"
+            )
+            return
+
+        # If we have enough history, fit a linear model of the object's position
+        data = np.array(self.target_position_history)
+        ts = data[:, 0]
+        ts = ts - current_t
+        x, y, z = data[:, 1], data[:, 2], data[:, 3]
+        x_poly = np.Poly.fit(ts, x, 1)
+        y_poly = np.Poly.fit(ts, y, 1)
+        z_poly = np.Poly.fit(ts, z, 1)
+
+        # Predict the time when the object will reach the desired y position
+        planned_grasp_time = (y_poly - self.params.desired_grasp_y).roots()[0]
+        self.get_logger().info(
+            f"Current y {y[-1]}, desired {self.params.desired_grasp_y}, planned grasp time: {planned_grasp_time}"
+        )
 
         # If the anticipated grasp time is within 0.2 seconds, publish a grasp event
-        if planned_grasp_time < self.params.grasp_lead_time:
+        if np.abs(planned_grasp_time) < self.params.grasp_lead_time:
             self.grasp_event_publisher.publish(Bool(data=True))
         else:
             self.grasp_event_publisher.publish(Bool(data=False))
 
-        if planned_grasp_time > 1e4:
-            self.get_logger().warn(
-                "Planned grasp time is too far in the future, skipping"
-            )
-            return
-        if planned_grasp_time < 0:
-            self.get_logger().warn(
-                "Planned grasp time is in the past, skipping"
-            )
-            return
-
         # Anticipate the object's position at the planned grasp time
-        anticipated_object_position = np.array([
-            object_pose_world.position.x + object_velocity_world.x * planned_grasp_time,
-            object_pose_world.position.y + object_velocity_world.y * planned_grasp_time,
-            object_pose_world.position.z + object_velocity_world.z * planned_grasp_time,
-        ])
+        anticipated_object_position = np.array(
+            [
+                x_poly(planned_grasp_time),
+                y_poly(planned_grasp_time),
+                z_poly(planned_grasp_time),
+            ]
+        )
 
         # Anticipate the angle of incidence in the x-y plane
         angle_of_incidence = np.arctan2(
-            object_velocity_world.y, object_velocity_world.x
+            y_poly.deriv()(planned_grasp_time), x_poly.deriv()(planned_grasp_time)
         )
-        self.get_logger().info(f"vx: {object_velocity_world.x}, vy: {object_velocity_world.y}, angle of incidence: {angle_of_incidence}")
-        if angle_of_incidence < 0 or angle_of_incidence > np.pi:
-            self.get_logger().warn(
-                "Angle of incidence is invalid, skipping"
-            )
-            return
+        self.get_logger().info(
+            f"vx: {x_poly.deriv()(planned_grasp_time)}, vy: {y_poly.deriv()(planned_grasp_time)}, angle of incidence: {angle_of_incidence}"
+        )
 
-        # TODO for now, fix angle of incidence
-        angle_of_incidence = np.pi / 2.0
+        # If we have vy < 0 for some reason, flip the angle of incidence
+        if angle_of_incidence > np.pi:
+            angle_of_incidence -= np.pi
+
+        if angle_of_incidence < 0 or angle_of_incidence > np.pi:
+            self.get_logger().warn("Angle of incidence is invalid, skipping")
+            return
 
         self.get_logger().info(
             f"Anticipated object position: {anticipated_object_position}, angle of incidence: {angle_of_incidence}"

@@ -10,7 +10,7 @@ grasp_selector:
   }
   input_topic: {
     type: string,
-    default_value: "odometry/filtered",
+    default_value: "odometry/unfiltered",
     read_only: true,
     description: "Name of Odometry topic tracking the object.",
     validation: {
@@ -40,6 +40,12 @@ grasp_selector:
     default_value: 1.0,
     read_only: false,
     description: "Don't try to grasp objects that are more stale than this value."
+  }
+  window_length: {
+    type: int,
+    default_value: 10,
+    read_only: false,
+    description: "The number of odometry measurements to use to predict the object's path."
   }
   grasp_lead_time: {
     type: double,

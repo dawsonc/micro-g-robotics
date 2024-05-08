@@ -142,19 +142,5 @@ def generate_launch_description():
                     "camera_link",
                 ],
             ),
-            # Foxglove
-            IncludeLaunchDescription(
-                XMLLaunchDescriptionSource(
-                    [
-                        PathJoinSubstitution(
-                            [
-                                FindPackageShare("foxglove_bridge"),
-                                "launch",
-                                "foxglove_bridge_launch.xml",
-                            ]
-                        )
-                    ]
-                ),
-            ),
         ]
     )

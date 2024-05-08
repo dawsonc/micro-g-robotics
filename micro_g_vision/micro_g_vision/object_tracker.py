@@ -89,7 +89,7 @@ class ObjectTrackerNode(Node):
         # We're also going to fake out the Odometry here (circumvent the EKF since
         # that wasn't giving great velocity estimates)
         self.odom_publisher = self.create_publisher(
-            Odometry, "/odometry/filtered", qos_profile_system_default
+            Odometry, "/odometry/unfiltered", qos_profile_system_default
         )
 
         self.create_timer(1.0 / 20.0, self.publish)
@@ -238,21 +238,24 @@ class ObjectTrackerNode(Node):
         # Publish the object pose
         self.publisher.publish(pose_base_object)
 
-        # # Estimate the linear velocity and publish odometry
-        # linear_velocity = (
-        #     self.mwa_position - self.position_history[0]
-        # ) / (len(self.position_history) * 1 / 20.0)
-        # linear_velocity = np.clip(linear_velocity, -0.1, 0.1)
+        # Estimate the linear velocity and publish odometry
+        if len(self.position_history) <= 4:
+            linear_velocity = np.zeros(3)
+        else:
+            linear_velocity = (
+                self.mwa_position - self.position_history[0]
+            ) / (len(self.position_history) * 1 / 20.0)
+        linear_velocity = np.clip(linear_velocity, -0.1, 0.1)
 
-        # odom = Odometry()
-        # odom.header.frame_id = "base_tag"
-        # odom.header.stamp = self.get_clock().now().to_msg()
-        # odom.pose = pose_base_object.pose
-        # odom.twist.twist.linear.x = linear_velocity[0]
-        # odom.twist.twist.linear.y = linear_velocity[1]
-        # odom.twist.twist.linear.z = linear_velocity[2]
+        odom = Odometry()
+        odom.header.frame_id = "base_tag"
+        odom.header.stamp = self.get_clock().now().to_msg()
+        odom.pose = pose_base_object.pose
+        odom.twist.twist.linear.x = linear_velocity[0]
+        odom.twist.twist.linear.y = linear_velocity[1]
+        odom.twist.twist.linear.z = linear_velocity[2]
 
-        # self.odom_publisher.publish(odom)
+        self.odom_publisher.publish(odom)
 
 
 def main(args=None):
