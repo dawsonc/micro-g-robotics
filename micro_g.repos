@@ -3,7 +3,7 @@ repositories:
   interbotix_ros_manipulators:
     type: git
     url: https://github.com/Interbotix/interbotix_ros_manipulators
-    version: humble
+    version: 854508352671992315cc86839e9996b2c83c50b3
 
   apriltag_ros:
     type: git

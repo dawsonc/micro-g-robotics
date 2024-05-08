@@ -117,22 +117,8 @@ def generate_launch_description():
                     "--frame-id",
                     "gantry_tag",
                     "--child-frame-id",
-                    "world",  # TODO change to base_link
+                    "gantry",
                 ],
-            ),
-            # Foxglove
-            IncludeLaunchDescription(
-                XMLLaunchDescriptionSource(
-                    [
-                        PathJoinSubstitution(
-                            [
-                                FindPackageShare("foxglove_bridge"),
-                                "launch",
-                                "foxglove_bridge_launch.xml",
-                            ]
-                        )
-                    ]
-                ),
             ),
         ]
     )

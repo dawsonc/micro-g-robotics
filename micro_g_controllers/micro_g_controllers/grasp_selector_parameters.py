@@ -20,7 +20,7 @@ class grasp_selector:
         # for detecting if the parameter struct has been updated
         stamp_ = Time()
 
-        target_frame = "world"
+        target_frame = "gantry"
         input_topic = "object_pose"
         output_topic = "px100/desired_eef_pose"
         class __Offset:

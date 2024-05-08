@@ -1,7 +1,7 @@
 grasp_selector:
   target_frame: {
     type: string,
-    default_value: "world",
+    default_value: "gantry",
     read_only: true,
     description: "Name of TF frame that grasp should be expressed in.",
     validation: {

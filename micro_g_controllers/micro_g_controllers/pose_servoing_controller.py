@@ -23,14 +23,12 @@ import time
 
 import modern_robotics as mr
 import numpy as np
-import rclpy
 import tf2_ros
 import transforms3d
 from geometry_msgs.msg import PoseStamped
 from interbotix_common_modules.angle_manipulation import angle_manipulation as ang
 from interbotix_xs_modules.xs_robot.arm import InterbotixManipulatorXS
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
-from rclpy.executors import MultiThreadedExecutor
 from rclpy.qos import qos_profile_system_default
 from rclpy.utilities import remove_ros_args
 from tf2_geometry_msgs import do_transform_pose
