@@ -53,7 +53,7 @@ class ObjectTrackerNode(Node):
             type=ParameterType.PARAMETER_DOUBLE,
             description="Decay rate of moving average filter",
         )
-        self.declare_parameter("mwa_decay", 0.9, descriptor=mwa_decay_desc)
+        self.declare_parameter("mwa_decay", 0.1, descriptor=mwa_decay_desc)
         self.mwa_decay = self.get_parameter("mwa_decay").value
         self.mwa_position = None
         self.mwa_orientation = np.array([1.0, 0.0, 0.0, 0.0])  # w x y z

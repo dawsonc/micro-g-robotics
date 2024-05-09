@@ -17,8 +17,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
-from collections import deque
-
 import rclpy
 import tf2_ros
 from std_msgs.msg import Float32, Bool
@@ -46,7 +44,7 @@ class GraspSelectorNode(Node):
         )
 
         self.time_since_target_last_seen = self.params.max_time_since_last_seen
-        self.target_position_history = deque(maxlen=self.params.window_length)
+        self.target_position_history = []
 
         # Declare subscriptions and publications
         self.get_logger().info(
@@ -59,11 +57,23 @@ class GraspSelectorNode(Node):
         self.time_since_last_seen_sub = self.create_subscription(
             Float32, "/time_since_last_seen", self.time_since_last_seen_callback, 10
         )
-        self.pose_publisher = self.create_publisher(
+        self.desired_eef_pose_publisher = self.create_publisher(
             PoseStamped, self.params.output_pose_topic, 10
         )
         self.grasp_event_publisher = self.create_publisher(
             Bool, self.params.output_grasp_topic, 10
+        )
+        self.estimated_velocity_publisher = self.create_publisher(
+            Vector3Stamped, "/grasp_selector/estimated_velocity", 10
+        )
+        self.current_point_publisher = self.create_publisher(
+            Vector3Stamped, "/grasp_selector/current_target_point", 10
+        )
+        self.estimated_grasp_point_publisher = self.create_publisher(
+            Vector3Stamped, "/grasp_selector/estimated_grasp_point", 10
+        )
+        self.estimated_angle_of_incidence_publisher = self.create_publisher(
+            Float32, "/grasp_selector/estimated_angle_of_incidence", 10
         )
 
         self.tf_buffer = Buffer()
@@ -78,6 +88,15 @@ class GraspSelectorNode(Node):
     def time_since_last_seen_callback(self, msg):
         self.time_since_target_last_seen = msg.data
 
+        # Clear history if stale
+        if self.time_since_target_last_seen > self.params.max_time_since_last_seen:
+            self.get_logger().info(
+                f"Clearing history, time since last seen: "
+                f"{self.time_since_target_last_seen}"
+            )
+            self.target_position_history.clear()
+            return
+
     def object_pose_callback(self, msg):
         # Skip if stale
         if self.time_since_target_last_seen > self.params.max_time_since_last_seen:
@@ -85,7 +104,6 @@ class GraspSelectorNode(Node):
                 f"Skipping object pose callback, time since last seen: "
                 f"{self.time_since_target_last_seen}"
             )
-            self.target_position_history.clear()
             return
 
         # Extract the current pose and velocity of the object
@@ -128,7 +146,9 @@ class GraspSelectorNode(Node):
             self.get_logger().error(f"Transform lookup failed: {str(e)}")
 
         # Save the object pose in the history
-        current_t = object_pose.header.stamp.secs + object_pose.header.stamp.nanosecs * 1e-9
+        current_t = (
+            object_pose.header.stamp.sec + object_pose.header.stamp.nanosec * 1e-9
+        )
         self.target_position_history.append(
             np.array(
                 [
@@ -152,21 +172,15 @@ class GraspSelectorNode(Node):
         ts = data[:, 0]
         ts = ts - current_t
         x, y, z = data[:, 1], data[:, 2], data[:, 3]
-        x_poly = np.Poly.fit(ts, x, 1)
-        y_poly = np.Poly.fit(ts, y, 1)
-        z_poly = np.Poly.fit(ts, z, 1)
+        x_poly = Poly.fit(ts, x, 1)
+        y_poly = Poly.fit(ts, y, 1)
+        z_poly = Poly.fit(ts, z, 1)
 
         # Predict the time when the object will reach the desired y position
         planned_grasp_time = (y_poly - self.params.desired_grasp_y).roots()[0]
-        self.get_logger().info(
+        self.get_logger().debug(
             f"Current y {y[-1]}, desired {self.params.desired_grasp_y}, planned grasp time: {planned_grasp_time}"
         )
-
-        # If the anticipated grasp time is within 0.2 seconds, publish a grasp event
-        if np.abs(planned_grasp_time) < self.params.grasp_lead_time:
-            self.grasp_event_publisher.publish(Bool(data=True))
-        else:
-            self.grasp_event_publisher.publish(Bool(data=False))
 
         # Anticipate the object's position at the planned grasp time
         anticipated_object_position = np.array(
@@ -177,11 +191,27 @@ class GraspSelectorNode(Node):
             ]
         )
 
+        # If the current position is close to the anticipated position, signal the grasp
+        current_target_point = np.array(
+            [
+                object_pose_world.position.x,
+                object_pose_world.position.y,
+                object_pose_world.position.z,
+            ]
+        )
+        if (
+            np.linalg.norm(current_target_point - anticipated_object_position)
+            < self.params.grasp_radius
+        ):
+            self.grasp_event_publisher.publish(Bool(data=True))
+        else:
+            self.grasp_event_publisher.publish(Bool(data=False))
+
         # Anticipate the angle of incidence in the x-y plane
         angle_of_incidence = np.arctan2(
             y_poly.deriv()(planned_grasp_time), x_poly.deriv()(planned_grasp_time)
         )
-        self.get_logger().info(
+        self.get_logger().debug(
             f"vx: {x_poly.deriv()(planned_grasp_time)}, vy: {y_poly.deriv()(planned_grasp_time)}, angle of incidence: {angle_of_incidence}"
         )
 
@@ -193,8 +223,37 @@ class GraspSelectorNode(Node):
             self.get_logger().warn("Angle of incidence is invalid, skipping")
             return
 
-        self.get_logger().info(
+        self.get_logger().debug(
             f"Anticipated object position: {anticipated_object_position}, angle of incidence: {angle_of_incidence}"
+        )
+
+        # Publish the estimated velocity, intercept point, and angle for visibility
+        estimated_velocity = Vector3Stamped()
+        estimated_velocity.header.stamp = self.get_clock().now().to_msg()
+        estimated_velocity.header.frame_id = "base_tag"
+        estimated_velocity.vector.x = x_poly.deriv()(0.0)
+        estimated_velocity.vector.y = y_poly.deriv()(0.0)
+        estimated_velocity.vector.z = z_poly.deriv()(0.0)
+        self.estimated_velocity_publisher.publish(estimated_velocity)
+
+        estimated_grasp_point = Vector3Stamped()
+        estimated_grasp_point.header = estimated_velocity.header
+        estimated_grasp_point.vector.x = anticipated_object_position[0]
+        estimated_grasp_point.vector.y = anticipated_object_position[1]
+        estimated_grasp_point.vector.z = anticipated_object_position[2]
+        self.estimated_grasp_point_publisher.publish(estimated_grasp_point)
+
+        current_target_point = Vector3Stamped()
+        current_target_point.header = estimated_velocity.header
+        current_target_point.vector.x = object_pose_world.position.x
+        current_target_point.vector.y = object_pose_world.position.y
+        current_target_point.vector.z = object_pose_world.position.z
+        self.current_point_publisher.publish(current_target_point)
+
+        estimated_angle_of_incidence = Float32()
+        estimated_angle_of_incidence.data = angle_of_incidence
+        self.estimated_angle_of_incidence_publisher.publish(
+            estimated_angle_of_incidence
         )
 
         # Set the grasp pose to be the object's anticipated position in the world frame,
@@ -220,7 +279,7 @@ class GraspSelectorNode(Node):
 
         # Publish the transformed pose
         self.get_logger().debug(f"Desired pose: {desired_pose}")
-        self.pose_publisher.publish(desired_pose)
+        self.desired_eef_pose_publisher.publish(desired_pose)
 
 
 def main(args=None):

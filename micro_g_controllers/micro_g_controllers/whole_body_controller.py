@@ -185,10 +185,10 @@ class WholeBodyController(InterbotixManipulatorXS):
 
     def grasp_object_callback(self, msg: Bool):
         """Callback for the grasp subscriber."""
-        if msg.data:
+        if msg.data and self.gripper_open:
             self.gripper.grasp(delay=0.3)
             self.gripper_open = False
-        else:
+        elif not msg.data and not self.gripper_open:
             self.gripper.release(delay=0.3)
             self.gripper_open = True
 
@@ -269,9 +269,10 @@ T_sd:
 
             return
         else:
-            if not self.gripper_open:
-                self.gripper.release(delay=0.3)
-                self.gripper_open = True
+            pass
+            # if not self.gripper_open:
+            #     self.gripper.release(delay=0.3)
+            #     self.gripper_open = True
 
         # Get the current end effector pose, then get the linear and angular error
         T_sb = self.arm.get_ee_pose()

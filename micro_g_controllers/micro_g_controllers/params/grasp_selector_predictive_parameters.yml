@@ -37,7 +37,7 @@ grasp_selector:
   }
   max_time_since_last_seen: {
     type: double,
-    default_value: 1.0,
+    default_value: 5.0,
     read_only: false,
     description: "Don't try to grasp objects that are more stale than this value."
   }
@@ -47,9 +47,9 @@ grasp_selector:
     read_only: false,
     description: "The number of odometry measurements to use to predict the object's path."
   }
-  grasp_lead_time: {
+  grasp_radius: {
     type: double,
-    default_value: 0.2,
+    default_value: 0.03,
     read_only: false,
     description: "Close the gripper this many seconds before intercept."
   }
