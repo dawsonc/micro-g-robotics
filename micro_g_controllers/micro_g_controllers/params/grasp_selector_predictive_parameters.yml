@@ -43,7 +43,7 @@ grasp_selector:
   }
   window_length: {
     type: int,
-    default_value: 10,
+    default_value: 5,
     read_only: false,
     description: "The number of odometry measurements to use to predict the object's path."
   }

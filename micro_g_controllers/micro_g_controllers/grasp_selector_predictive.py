@@ -90,10 +90,11 @@ class GraspSelectorNode(Node):
 
         # Clear history if stale
         if self.time_since_target_last_seen > self.params.max_time_since_last_seen:
-            self.get_logger().info(
-                f"Clearing history, time since last seen: "
-                f"{self.time_since_target_last_seen}"
-            )
+            if len(self.target_position_history) > 0:
+                self.get_logger().info(
+                    f"Clearing history, time since last seen: "
+                    f"{self.time_since_target_last_seen}"
+                )
             self.target_position_history.clear()
             return
 
@@ -177,10 +178,14 @@ class GraspSelectorNode(Node):
         z_poly = Poly.fit(ts, z, 1)
 
         # Predict the time when the object will reach the desired y position
-        planned_grasp_time = (y_poly - self.params.desired_grasp_y).roots()[0]
-        self.get_logger().debug(
-            f"Current y {y[-1]}, desired {self.params.desired_grasp_y}, planned grasp time: {planned_grasp_time}"
-        )
+        try:
+            planned_grasp_time = (y_poly - self.params.desired_grasp_y).roots()[0]
+            self.get_logger().debug(
+                f"Current y {y[-1]}, desired {self.params.desired_grasp_y}, planned grasp time: {planned_grasp_time}"
+            )
+        except IndexError:
+            self.get_logger().warn("No roots found, skipping")
+            return
 
         # Anticipate the object's position at the planned grasp time
         anticipated_object_position = np.array(
@@ -199,12 +204,10 @@ class GraspSelectorNode(Node):
                 object_pose_world.position.z,
             ]
         )
-        if (
-            np.linalg.norm(current_target_point - anticipated_object_position)
-            < self.params.grasp_radius
-        ):
+        distance = np.linalg.norm(current_target_point - anticipated_object_position)
+        if distance < self.params.grasp_radius:
             self.grasp_event_publisher.publish(Bool(data=True))
-        else:
+        elif distance > self.params.grasp_radius + 0.02:  # debounce
             self.grasp_event_publisher.publish(Bool(data=False))
 
         # Anticipate the angle of incidence in the x-y plane

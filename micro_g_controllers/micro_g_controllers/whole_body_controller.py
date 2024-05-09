@@ -268,11 +268,6 @@ T_sd:
             self.tic.set_target_velocity(0)
 
             return
-        else:
-            pass
-            # if not self.gripper_open:
-            #     self.gripper.release(delay=0.3)
-            #     self.gripper_open = True
 
         # Get the current end effector pose, then get the linear and angular error
         T_sb = self.arm.get_ee_pose()
@@ -303,11 +298,7 @@ T_sd:
         position_error = position_desired - position_current
         euler_error = euler_desired - euler_current
 
-        # Linear stage update (track y coordinate of error)
-        self.linear_stage_controller(position_error[1])
-
-        # Arm control (don't track y error)
-        position_error[1] = 0
+        # Whole body diff IK control
         self.core.get_logger().debug(f"""
 ---------------------------------------
 Diff IK summary
@@ -330,10 +321,16 @@ Orientation error: {euler_error}
         twist[:3] = euler_error
         twist *= self.params.arm_kp
 
-        # Compute the Jacobian
+        # Compute the Jacobian (this just gives us the Jacobian for the arm)
         # self.arm.capture_joint_positions()
         joint_angles = np.array(self.arm.get_joint_commands())
-        J = mr.JacobianSpace(Slist=self.arm.robot_des.Slist, thetalist=joint_angles)
+        J_arm = mr.JacobianSpace(Slist=self.arm.robot_des.Slist, thetalist=joint_angles)
+
+        # Add the Jacobian for the linear stage, which is fortunately pretty easy
+        # since positive motion in the linear stage leads to motion in negative y
+        J = np.zeros((6, 5))
+        J[:, :4] = J_arm
+        J[4, 4] = -1.0
 
         # Get the joint velocities
         joint_velocities = np.dot(np.linalg.pinv(J), twist)
@@ -349,9 +346,13 @@ Twist: {twist}
 joint_velocities: {joint_velocities}
 """)
 
+        # Split into arm and linear stage
+        joint_velocities_arm = joint_velocities[:4]
+        joint_velocities_linear = joint_velocities[4]
+
         # Update the joint positions
         desired_joint_positions = (
-            joint_angles + joint_velocities / self.params.control_update_rate
+            joint_angles + joint_velocities_arm / self.params.control_update_rate
         )
 
         self.arm.set_joint_positions(
@@ -361,8 +362,10 @@ joint_velocities: {joint_velocities}
             accel_time=0.25,
         )
 
-    def linear_stage_controller(self, linear_error):
-        """Control law for linear stage to track the desired position."""
+        self.linear_stage_controller(joint_velocities_linear)
+
+    def linear_stage_controller(self, linear_speed):
+        """Control law for linear stage to track a desired speed."""
         # First, make sure the linear stage is within the boundaries
         try:
             transform = self.tf_buffer.lookup_transform(
@@ -378,23 +381,23 @@ joint_velocities: {joint_velocities}
         current_base_x = current_base_position.x
 
         if current_base_x < self.params.linear_stage_limits.x.min:
-            linear_error = self.params.linear_stage_limits.x.min - current_base_x
-            self.core.get_logger().warning(
+            linear_speed = - self.params.linear_stage_kp * (self.params.linear_stage_limits.x.min - current_base_x)
+            self.core.get_logger().debug(
                 f"Current position {current_base_x} is below min position"
                 f" {self.params.linear_stage_limits.x.min}"
             )
         elif current_base_x > self.params.linear_stage_limits.x.max:
-            linear_error = self.params.linear_stage_limits.x.max - current_base_x
-            self.core.get_logger().warning(
+            linear_speed = - self.params.linear_stage_kp * (self.params.linear_stage_limits.x.max - current_base_x)
+            self.core.get_logger().debug(
                 f"Current position {current_base_x} is above max position"
                 f" {self.params.linear_stage_limits.x.max}"
             )
 
         # Compute the velocity command based on the error
-        speed_command = -self.params.linear_stage_kp * linear_error
-        speed_command = max(
-            min(speed_command, self.params.linear_stage_limits.speed),
+        speed_command = np.clip(
+            linear_speed,
             -self.params.linear_stage_limits.speed,
+            self.params.linear_stage_limits.speed,
         )
 
         # Send the command to the motor
