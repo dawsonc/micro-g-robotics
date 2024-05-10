@@ -49,7 +49,7 @@ grasp_selector:
   }
   grasp_radius: {
     type: double,
-    default_value: 0.03,
+    default_value: 0.035,
     read_only: false,
     description: "Close the gripper this many seconds before intercept."
   }
