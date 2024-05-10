@@ -1,31 +1,36 @@
 # Flight Preparation Checklist
 
 - [ ] Open the `micro-g-robotics` folder in VSCode
-- [ ] Re-open the `micro-g-robotics` VSCode workspace the `Micro-G Robotics`
+- [ ] Re-open the `micro-g-robotics` VSCode workspace in the `Micro-G Robotics`
       Docker Container
 - [ ] Navigate into the `ws_micro_g` ROS workspace:
-      ```bash
+
+      ```sh
       cd ~/ws_micro_g/
       ```
+
 - [ ] Build and source the ROS workspace:
-      ```bash
+
+      ```sh
       colcon build --packages-select-regex micro_g* && source install/setup.bash
       ```
+
 - [ ] Connect the laptop charger
 - [ ] Verify that the Realsense USB cable and the robot USB cable are connected
       to the USB hub
 - [ ] Connect the USB hub to the laptop
 - [ ] Verify that the red LED located on the robot control box is on
 - [ ] Connect the stepper motor USB to the laptop
-- [ ] Verify that the stepper motor green and red LEDs turn on and that the
+- [ ] Verify that the stepper motor's green and red LEDs turn on and that the
       yellow LED is flashing yellow
 - [ ] Turn on the powerstrip
 - [ ] Verify that the red LEDs located on the robot's joint are on
 - [ ] Open `ticgui`
-- [ ] Energize the stepper motor then de-energize the stepper motor
+- [ ] Energize and de-energize the stepper motor
 - [ ] Launch the `micro_g` system where `<filename>` should be replaced with
       a filename adhering to the convention `<gravity-type>-<recording #>`:
-      ```bash
+
+      ```sh
       ros2 launch micro_g micro_g.launch.yml record_bag:=true bag_filename:=src/micro-g-robotics/bags/<filename>
       ```
 
@@ -41,7 +46,7 @@ following steps on the host system:
 
 1. Copy the following udev rules
 
-   ```bash
+   ```sh
    # Place this file in /etc/udev/rules.d/
    # Then reload udev by typing 'udevadm control --reload-rules && udevadm trigger'
    # Sets up rules to give permanent names to devices
@@ -70,13 +75,13 @@ following steps on the host system:
 
 2. Paste the copied rules into the file `/etc/udev/rules.d/99-interbotix-udev.rules`
 
-   ```bash
+   ```sh
    sudo nano /etc/udev/rules.d/99-interbotix-udev.rules
    ```
 
 3. Apply the udev rules
 
-   ```bash
+   ```sh
    sudo udevadm control --reload-rules && sudo udevadm trigger
    ```
 
@@ -87,7 +92,7 @@ following steps on the host system:
 
 1. Copy the following udev rules
 
-   ```bash
+   ```sh
    ##Version=1.1##
    # Device rules for Intel RealSense devices (R200, F200, SR300 LR200, ZR300, D400, L500, T200)
    SUBSYSTEMS=="usb", ATTRS{idVendor}=="8086", ATTRS{idProduct}=="0a80", MODE:="0666", GROUP:="plugdev", RUN+="/usr/local/bin/usb-R200-in_udev"
@@ -183,12 +188,12 @@ following steps on the host system:
 
 2. Paste the copied rules into the file `/etc/udev/rules.d/99-realsense-libusb.rules`
 
-   ```bash
+   ```sh
    sudo nano /etc/udev/rules.d/99-realsense-libusb.rules
    ```
 
 3. Apply the udev rules
 
-   ```bash
+   ```sh
    sudo udevadm control --reload-rules && sudo udevadm trigger
    ```
