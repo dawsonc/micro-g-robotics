@@ -19,6 +19,7 @@ RUN apt-get -q update \
     python3-pip \
     python3-dev \
     apt-utils \
+    nano \
     software-properties-common \
     && apt-get autoremove -y \
     && apt-get clean -y \
