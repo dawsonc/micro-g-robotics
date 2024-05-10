@@ -175,6 +175,7 @@ class ObjectTrackerNode(Node):
         time_since_last_seen = time.time() - self.last_target_time
         self.target_time_publisher.publish(Float32(data=time_since_last_seen))
         if time_since_last_seen > 0.25:
+            self.mwa_position = None
             return
 
         # Don't publish if we haven't seen the target
@@ -242,9 +243,9 @@ class ObjectTrackerNode(Node):
         if len(self.position_history) <= 4:
             linear_velocity = np.zeros(3)
         else:
-            linear_velocity = (
-                self.mwa_position - self.position_history[0]
-            ) / (len(self.position_history) * 1 / 20.0)
+            linear_velocity = (self.mwa_position - self.position_history[0]) / (
+                len(self.position_history) * 1 / 20.0
+            )
         linear_velocity = np.clip(linear_velocity, -0.1, 0.1)
 
         odom = Odometry()
