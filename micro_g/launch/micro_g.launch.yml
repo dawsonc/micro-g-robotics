@@ -1,5 +1,5 @@
 # Example use:
-# ros2 launch micro_g micro_g.launch.yaml record_bag:=true bag_filename:=martian_g_1
+# ros2 launch micro_g micro_g.launch.yml record_bag:=true bag_filename:=src/micro-g-robotics/bags/martian_g_1
 
 launch:
 
@@ -64,6 +64,10 @@ launch:
       file: $(find-pkg-share foxglove_bridge)/launch/foxglove_bridge_launch.xml
       if: $(var use_foxglove)
 
+#   - executable:
+#       cmd: ros2 bag record -o $(var bag_filename) $(var bag_topics)
+#       if: $(var record_bag)
+
   - executable:
-      cmd: ros2 bag record -o $(var bag_filename) $(var bag_topics)
+      cmd: ros2 bag record -o $(var bag_filename) -a
       if: $(var record_bag)
