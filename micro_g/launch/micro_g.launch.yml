@@ -1,0 +1,69 @@
+# Example use:
+# ros2 launch micro_g micro_g.launch.yaml record_bag:=true bag_filename:=martian_g_1
+
+launch:
+
+  - arg:
+      name: robot_model
+      default: px100
+
+  - arg:
+      name: robot_name
+      default: px100
+
+  - arg:
+      name: motor_configs
+      default: $(find-pkg-share micro_g)/config/px100.yml
+
+  - arg:
+      name: mode_configs
+      default: $(find-pkg-share micro_g)/config/modes.yml
+
+  - arg:
+      name: use_foxglove
+      default: "false"
+
+  - arg:
+      name: record_bag
+      default: "false"
+
+  - arg:
+      name: bag_filename
+      default: micro_g_bag
+
+  # TODO: Add default topics
+  - arg:
+      name: bag_topics
+      default: ""
+
+  - include:
+      file: $(find-pkg-share micro_g)/launch/hw_interfaces.launch.yml
+      arg:
+        - name: robot_model
+          value: $(var robot_model)
+        - name: motor_configs
+          value: $(var motor_configs)
+        - name: mode_configs
+          value: $(var mode_configs)
+
+  - include:
+      file: $(find-pkg-share micro_g_controllers)/launch/controllers.launch.py
+      arg:
+        - name: robot_model
+          value: $(var robot_model)
+        - name: robot_name
+          value: $(var robot_name)
+
+  - include:
+      file: $(find-pkg-share micro_g_vision)/launch/vision.launch.py
+
+  - include:
+      file: $(find-pkg-share micro_g_controllers)/launch/grasp_selector.launch.py
+
+  - include:
+      file: $(find-pkg-share foxglove_bridge)/launch/foxglove_bridge_launch.xml
+      if: $(var use_foxglove)
+
+  - executable:
+      cmd: ros2 bag record -o $(var bag_filename) $(var bag_topics)
+      if: $(var record_bag)

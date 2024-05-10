@@ -1,0 +1,23 @@
+launch:
+
+  - arg:
+      name: robot_model
+      default: px100
+
+  - arg:
+      name: motor_configs
+      default: $(find-pkg-share micro_g)/config/px100.yml
+
+  - arg:
+      name: mode_configs
+      default: $(find-pkg-share micro_g)/config/modes.yml
+
+  - include:
+      file: $(find-pkg-share interbotix_xsarm_control)/launch/xsarm_control.launch.py
+      arg:
+        - name: robot_model
+          value: $(var robot_model)
+        - name: motor_configs
+          value: $(var motor_configs)
+        - name: mode_configs
+          value: $(var mode_configs)
