@@ -1,38 +1,38 @@
 # Flight Preparation Checklist
 
-- [ ] Open the `micro-g-robotics` folder in VSCode
-- [ ] Re-open the `micro-g-robotics` VSCode workspace in the `Micro-G Robotics`
-      Docker Container
-- [ ] Navigate into the `ws_micro_g` ROS workspace:
+1. Open the `micro-g-robotics` folder in VSCode
+2. Re-open the `micro-g-robotics` VSCode workspace in the `Micro-G Robotics`
+   Docker Container
+3. Navigate into the `ws_micro_g` ROS workspace:
 
-      ```sh
-      cd ~/ws_micro_g/
-      ```
+   ```sh
+   cd ~/ws_micro_g/
+   ```
 
-- [ ] Build and source the ROS workspace:
+4. Build and source the ROS workspace:
 
-      ```sh
-      colcon build --packages-select-regex micro_g* && source install/setup.bash
-      ```
+   ```sh
+   colcon build --packages-select-regex micro_g* && source install/setup.bash
+   ```
 
-- [ ] Connect the laptop charger
-- [ ] Verify that the Realsense USB cable and the robot USB cable are connected
-      to the USB hub
-- [ ] Connect the USB hub to the laptop
-- [ ] Verify that the red LED located on the robot control box is on
-- [ ] Connect the stepper motor USB to the laptop
-- [ ] Verify that the stepper motor's green and red LEDs turn on and that the
-      yellow LED is flashing yellow
-- [ ] Turn on the powerstrip
-- [ ] Verify that the red LEDs located on the robot's joint are on
-- [ ] Open `ticgui`
-- [ ] Energize and de-energize the stepper motor
-- [ ] Launch the `micro_g` system where `<filename>` should be replaced with
-      a filename adhering to the convention `<gravity-type>-<recording #>`:
+5. Connect the laptop charger
+6. Verify that the Realsense USB cable and the robot USB cable are connected
+   to the USB hub
+7. Connect the USB hub to the laptop
+8. Verify that the red LED located on the robot control box is on
+9. Connect the stepper motor USB to the laptop
+10. Verify that the stepper motor's green and red LEDs turn on and that the
+    yellow LED is flashing yellow
+11. Turn on the powerstrip
+12. Verify that the red LEDs located on the robot's joint are on
+13. Open `ticgui`
+14. Energize and de-energize the stepper motor
+15. Launch the `micro_g` system where `<filename>` should be replaced with
+    a filename adhering to the convention `<gravity-type>-<recording #>`:
 
-      ```sh
-      ros2 launch micro_g micro_g.launch.yml record_bag:=true bag_filename:=src/micro-g-robotics/bags/<filename>
-      ```
+    ```sh
+    ros2 launch micro_g micro_g.launch.yml record_bag:=true bag_filename:=src/micro-g-robotics/bags/<filename>
+    ```
 
 ## Debug Steps
 
