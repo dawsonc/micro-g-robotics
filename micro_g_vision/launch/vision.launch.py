@@ -22,8 +22,6 @@ from launch import LaunchDescription
 from launch.substitutions import PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
-from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
-from launch.actions import IncludeLaunchDescription
 
 
 def generate_launch_description():
@@ -81,21 +79,21 @@ def generate_launch_description():
                 output="screen",
             ),
             # Start the EKF node
-            Node(
-                package="robot_localization",
-                executable="ekf_node",
-                name="ekf_filter_node",
-                output="screen",
-                parameters=[
-                    PathJoinSubstitution(
-                        [
-                            FindPackageShare("micro_g_vision"),
-                            "config",
-                            "ekf.yml",
-                        ]
-                    )
-                ],
-            ),
+            # Node(
+            #     package="robot_localization",
+            #     executable="ekf_node",
+            #     name="ekf_filter_node",
+            #     output="screen",
+            #     parameters=[
+            #         PathJoinSubstitution(
+            #             [
+            #                 FindPackageShare("micro_g_vision"),
+            #                 "config",
+            #                 "ekf.yml",
+            #             ]
+            #         )
+            #     ],
+            # ),
             # Launch the static transform from the robot gantry apriltag to the robot base
             # There doesn't seem to be a good way to put this in a config.
             Node(
@@ -125,17 +123,17 @@ def generate_launch_description():
                 executable="static_transform_publisher",
                 arguments=[
                     "--x",
-                    "-0.414",
+                    "-0.386",
                     "--y",
-                    "-0.154",
+                    "-0.155",
                     "--z",
-                    "0.262",
+                    "0.227",
                     "--yaw",
-                    "0.937",
+                    "0.809",
                     "--pitch",
-                    "0.568",
+                    "0.531",
                     "--roll",
-                    "0.076",
+                    "-0.139",
                     "--frame-id",
                     "base_tag",
                     "--child-frame-id",

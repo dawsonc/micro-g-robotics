@@ -25,7 +25,7 @@
     yellow LED is flashing yellow
 11. Turn on the powerstrip
 12. Verify that the red LEDs located on the robot's joint are on
-13. Open `ticgui`
+13. Open `ticgui` on the host (not the docker_)
 14. Energize and de-energize the stepper motor
 15. Launch the `micro_g` system where `<filename>` should be replaced with
     a filename adhering to the convention `<gravity-type>-<recording #>`:
@@ -33,6 +33,8 @@
     ```sh
     ros2 launch micro_g micro_g.launch.yml record_bag:=true bag_filename:=src/micro-g-robotics/bags/<filename>
     ```
+
+TODO: check running the rosbag from the launch file.
 
 ## Debug Steps
 
