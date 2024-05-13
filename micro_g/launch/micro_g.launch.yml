@@ -1,5 +1,5 @@
 # Example use:
-# ros2 launch micro_g micro_g.launch.yml record_bag:=true bag_filename:=src/micro-g-robotics/bags/martian_g_1
+# ros2 launch micro_g micro_g.launch.yml record_bag:=true
 
 launch:
 
@@ -25,11 +25,7 @@ launch:
 
   - arg:
       name: record_bag
-      default: "false"
-
-  - arg:
-      name: bag_filename
-      default: bag_micro_g
+      default: "true"
 
   - include:
       file: $(find-pkg-share micro_g)/launch/hw_interfaces.launch.yml
@@ -59,10 +55,10 @@ launch:
       file: $(find-pkg-share foxglove_bridge)/launch/foxglove_bridge_launch.xml
       if: $(var use_foxglove)
 
-  - executable:
-      cmd: ros2 bag record -o $(var bag_filename) /accel/imu_info /accel/metadata /accel/sample /gyro/imu_info /gyro/metadata /gyro/sample /imu /color/camera_info /color/image_raw /color/metadata /extrinsics/depth_to_accel /extrinsics/depth_to_color /extrinsics/depth_to_depth /extrinsics/depth_to_gyro /detections /object_pose /odometry/unfiltered /time_since_last_seen /grasp_selector/current_target_point /grasp_selector/estimated_angle_of_incidence /grasp_selector/estimated_grasp_point /grasp_selector/estimated_velocity /px100/desired_eef_pose /px100/grasp /px100/robot_description /px100/joint_states /px100/commands/joint_group /px100/commands/joint_single /px100/commands/joint_trajectory /tf /tf_static
+  - include:
+      file: $(find-pkg-share micro_g)/launch/rosbag.launch.py
       if: $(var record_bag)
 
-  # - executable:
-  #     cmd: ros2 bag record -o $(var bag_filename) -a
-  #     if: $(var record_bag)
+#   - executable:
+#       cmd: ros2 bag record /accel/imu_info /accel/metadata /accel/sample /gyro/imu_info /gyro/metadata /gyro/sample /imu /color/camera_info /color/image_raw /color/metadata /extrinsics/depth_to_accel /extrinsics/depth_to_color /extrinsics/depth_to_depth /extrinsics/depth_to_gyro /detections /object_pose /odometry/unfiltered /time_since_last_seen /grasp_selector/current_target_point /grasp_selector/estimated_angle_of_incidence /grasp_selector/estimated_grasp_point /grasp_selector/estimated_velocity /px100/desired_eef_pose /px100/grasp /px100/robot_description /px100/joint_states /px100/commands/joint_group /px100/commands/joint_single /px100/commands/joint_trajectory /tf /tf_static
+#       if: $(var record_bag)

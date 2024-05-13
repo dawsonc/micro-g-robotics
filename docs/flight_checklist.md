@@ -16,22 +16,20 @@
    ```
 
 5. Connect the laptop charger
-6. Verify that the Realsense USB cable and the robot USB cable are connected
-   to the USB hub
+6. Verify that the Realsense USB cable and the robot USB cable are connected to the USB hub
 7. Connect the USB hub to the laptop
 8. Verify that the red LED located on the robot control box is on
 9. Connect the stepper motor USB to the laptop
-10. Verify that the stepper motor's green and red LEDs turn on and that the
-    yellow LED is flashing yellow
+10. Verify that the stepper motor's green and red LEDs turn on and that the yellow LED is flashing yellow
 11. Turn on the powerstrip
 12. Verify that the red LEDs located on the robot's joint are on
 13. Open `ticgui` on the host (not the docker_)
 14. Energize and de-energize the stepper motor
-15. Launch the `micro_g` system where `<filename>` should be replaced with
-    a filename adhering to the convention `<gravity-type>-<recording #>`:
+15. Manually move the robot to the same side of the enclosure as the Realsense camera (better success rates, since the camera detects the object earlier when released on that side).
+16. Launch the `micro_g` system:
 
     ```sh
-    ros2 launch micro_g micro_g.launch.yml record_bag:=true bag_filename:=src/micro-g-robotics/bags/<filename>
+    ros2 launch micro_g micro_g.launch.yml record_bag:=true
     ```
 
 TODO: check running the rosbag from the launch file.
